@@ -63,7 +63,7 @@ Usuarios de prueba (contraseña `Akar2026!`):
 1. Crear un proyecto en [Supabase](https://supabase.com) y aplicar las migraciones: `npx supabase link --project-ref <ref>` y `npx supabase db push`.
 2. En Supabase → *Authentication → URL Configuration*: `Site URL` = la URL del sistema y agregar `https://TU-DOMINIO/restablecer` a *Redirect URLs*. Desactivar el registro público (*Allow new users to sign up*): los usuarios los crea el administrador.
 3. Configurar un proveedor SMTP propio en Supabase para los correos de restablecer contraseña (el de prueba tiene un límite muy bajo).
-4. Desplegar en Vercel (u otro host de Next.js) con las variables de `.env.example`.
+4. Desplegar en Netlify: *Add new site → Import an existing project → GitHub → Jenn-ross-mk/CRM*. La configuración de build ya está en `netlify.toml`. Cargar las variables de `.env.example` en *Site configuration → Environment variables* y volver a desplegar.
 5. Crear la primera cuenta de administrador: desde Supabase → *Authentication → Add user*, y después en SQL: `update perfiles set rol = 'administrador' where email = '…';`
 
 ## Estructura
