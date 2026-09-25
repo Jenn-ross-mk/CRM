@@ -4,8 +4,7 @@
 -- Qué hace:
 --   1. Crea la tabla modelos (los 0km que se ofrecen en el CRM: test drive, ventas, lead).
 --   2. Agrega 'telefono' y 'presencial' a los canales permitidos en contactos
---      (para los leads que el vendedor carga a mano).
---      ⚠ La lista de canales de abajo se confirma con el resultado del Bloque 0.
+--      (para los leads que el vendedor carga a mano). Se mantienen los 5 canales que ya existían.
 --
 -- Resultado esperado: "Success. No rows returned".
 -- Verificación: Table Editor → modelos → 11 filas.

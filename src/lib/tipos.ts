@@ -5,7 +5,7 @@ export type Sector = 'convencional' | 'plan_ahorro' | 'usados' | 'postventa' | '
 export type Canal = 'whatsapp' | 'messenger' | 'instagram' | 'web' | 'marketplace' | 'telefono' | 'presencial';
 export type EstadoUsuario = 'activo' | 'ocupado' | 'desconectado';
 export type EstadoLead = 'en_conversacion' | 'en_cola' | 'asignacion_manual' | 'derivado' | 'perdido' | 'recuperar' | 'no_contactar' | 'cerrado';
-export type EstadoTurno = 'pendiente' | 'aprobado' | 'rechazado' | 'realizado';
+export type EstadoTurno = 'pendiente' | 'aprobado' | 'rechazado' | 'hecho';
 export type Prioridad = 'alta' | 'media' | 'baja';
 export type AutorTipo = 'cliente' | 'bot' | 'vendedor';
 

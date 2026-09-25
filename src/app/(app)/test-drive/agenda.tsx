@@ -12,7 +12,7 @@ const ESTADO: Record<EstadoTurno, { clase: string; texto: string }> = {
   pendiente: { clase: 'status-pendiente', texto: 'Pendiente' },
   aprobado: { clase: 'status-aprobado', texto: 'Aprobado' },
   rechazado: { clase: 'status-pendiente', texto: 'Rechazado' },
-  realizado: { clase: 'status-hecho', texto: 'Realizado' },
+  hecho: { clase: 'status-hecho', texto: 'Realizado' },
 };
 
 export function AgendaTestDrive({ turnos, sucursales, modelos, leads, yo }: {

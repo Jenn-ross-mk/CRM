@@ -5,9 +5,8 @@
 --   NO volver a correrlo en esa base: ya está aplicado. Sirve para armar una base nueva
 --   desde cero (por ejemplo, la de producción) con `supabase db push`.
 --
--- ⚠ Algunas listas de valores permitidos (check) quedaron cortadas en el registro de la
---   conversación. Las marcadas con "(verificar)" se confirman con el resultado de
---   supabase/parte6/00_verificacion.sql y se corrigen acá si hace falta.
+-- Las listas de valores permitidos (check) están confirmadas contra la base real
+-- con supabase/parte6/00_verificacion.sql (25/09/2026).
 -- =============================================================
 
 -- ---------- Parte 1: estructura de la empresa ----------
@@ -35,8 +34,8 @@ create table usuarios (
   foto_url     text,
   rol          text not null check (rol in ('vendedor','supervisor','admin')),
   sucursal_id  bigint references sucursales(id),
-  sector       text check (sector in ('convencional','plan_ahorro','usados','postventa','repuestos')),   -- (verificar)
-  estado       text not null default 'desconectado' check (estado in ('activo','ocupado','desconectado')), -- (verificar)
+  sector       text check (sector in ('convencional','plan_ahorro','usados','postventa','repuestos')),  
+  estado       text not null default 'desconectado' check (estado in ('activo','ocupado','desconectado')),
   activo       boolean not null default true,
   creado_en    timestamptz not null default now()
 );
@@ -48,7 +47,7 @@ alter table usuarios    enable row level security;
 -- ---------- Parte 2: leads y conversaciones ----------
 create table contactos (
   id             bigint generated always as identity primary key,
-  canal          text not null check (canal in ('whatsapp','messenger','instagram')), -- (verificar) · la Parte 6 la amplía
+  canal          text not null check (canal in ('whatsapp','messenger','instagram','web','marketplace')), -- la Parte 6 agrega telefono y presencial
   canal_id       text not null,
   nombre_perfil  text,
   telefono       text,
@@ -59,11 +58,11 @@ create table contactos (
 create table leads (
   id                     bigint generated always as identity primary key,
   contacto_id            bigint not null references contactos(id),
-  modo                   text not null default 'bot' check (modo in ('bot','humano')), -- (verificar)
+  modo                   text not null default 'bot' check (modo in ('bot','humano')),
   estado                 text not null default 'en_conversacion'
                          check (estado in ('en_conversacion','en_cola','derivado','perdido','recuperar','no_contactar')), -- se reemplaza en la Parte 5
   sucursal_id            bigint references sucursales(id),
-  sector                 text check (sector in ('convencional','plan_ahorro','usados','postventa','repuestos')), -- (verificar)
+  sector                 text check (sector in ('convencional','plan_ahorro','usados','postventa','repuestos')),
   vendedor_id            bigint references usuarios(id),
   nombre_cliente         text,
   localidad              text,
@@ -73,7 +72,7 @@ create table leads (
   marca                  text,
   modelo_anio            text,
   uso                    text check (uso in ('comercial','familiar','laboral')),
-  forma_pago             text check (forma_pago in ('financiacion','plan_ahorro','contado')), -- (verificar)
+  forma_pago             text check (forma_pago in ('financiacion','plan_ahorro','contado')),
   entrega_vehiculo       boolean,
   entrega_capital        boolean,
   monto_capital          text,
@@ -91,13 +90,13 @@ create table mensajes (
   id                bigint generated always as identity primary key,
   lead_id           bigint not null references leads(id) on delete cascade,
   direccion         text not null check (direccion in ('entrante','saliente')),
-  autor_tipo        text not null check (autor_tipo in ('cliente','bot','vendedor')), -- (verificar)
+  autor_tipo        text not null check (autor_tipo in ('cliente','bot','vendedor')),
   autor_usuario_id  bigint references usuarios(id),
-  tipo              text not null default 'texto' check (tipo in ('texto','imagen','audio','documento','video','plantilla')), -- (verificar)
+  tipo              text not null default 'texto' check (tipo in ('texto','imagen','audio','documento','plantilla')),
   contenido         text,
   media_url         text,
   canal_mensaje_id  text unique,
-  estado_envio      text check (estado_envio in ('pendiente','enviado','entregado','leido','error')), -- (verificar)
+  estado_envio      text check (estado_envio in ('pendiente','enviado','entregado','leido','fallido')),
   creado_en         timestamptz not null default now(),
   check (autor_tipo <> 'vendedor' or autor_usuario_id is not null)
 );
@@ -106,7 +105,7 @@ create table asignaciones (
   id           bigint generated always as identity primary key,
   lead_id      bigint not null references leads(id) on delete cascade,
   vendedor_id  bigint not null references usuarios(id),
-  motivo       text not null check (motivo in ('automatica','reasignacion','manual')), -- (verificar)
+  motivo       text not null check (motivo in ('automatica','reasignacion','manual')),
   asignado_en  timestamptz not null default now()
 );
 
@@ -148,7 +147,7 @@ alter table asignaciones enable row level security;
 -- ---------- Parte 3: organización del lead ----------
 create table etapas_pipeline (
   id      bigint generated always as identity primary key,
-  sector  text not null check (sector in ('convencional','plan_ahorro','usados')), -- (verificar)
+  sector  text not null check (sector in ('convencional','plan_ahorro','usados')),
   orden   smallint not null,
   nombre  text not null,
   unique (sector, orden)
@@ -186,7 +185,7 @@ create table notas (
 create table lead_historial (
   id           bigint generated always as identity primary key,
   lead_id      bigint not null references leads(id) on delete cascade,
-  tipo         text not null check (tipo in ('etapa','asignacion','derivacion','estado','nota')), -- (verificar)
+  tipo         text not null check (tipo in ('etapa','asignacion','derivacion','seguimiento','sistema')),
   descripcion  text not null,
   usuario_id   bigint references usuarios(id),
   creado_en    timestamptz not null default now()
@@ -233,7 +232,7 @@ create index idx_alertas_usuario_fecha on alertas(usuario_id, fecha_hora);
 
 create table turnos (
   id                bigint generated always as identity primary key,
-  tipo              text not null default 'test_drive' check (tipo in ('test_drive','visita','entrega')), -- (verificar)
+  tipo              text not null default 'test_drive' check (tipo in ('test_drive','llamada')),
   lead_id           bigint references leads(id) on delete set null,
   cliente_nombre    text not null,
   cliente_telefono  text,
@@ -241,7 +240,7 @@ create table turnos (
   sucursal_id       bigint references sucursales(id),
   vendedor_id       bigint not null references usuarios(id),
   fecha_hora        timestamptz not null,
-  estado            text not null default 'pendiente' check (estado in ('pendiente','aprobado','rechazado','realizado','cancelado')), -- (verificar)
+  estado            text not null default 'pendiente' check (estado in ('pendiente','aprobado','rechazado','hecho')),
   aprobado_por      bigint references usuarios(id),
   creado_en         timestamptz not null default now()
 );
@@ -254,7 +253,7 @@ create table ventas (
   vehiculo        text not null,
   vendedor_id     bigint not null references usuarios(id),
   sucursal_id     bigint references sucursales(id),
-  sector          text not null check (sector in ('convencional','plan_ahorro','usados')), -- (verificar)
+  sector          text not null check (sector in ('convencional','plan_ahorro','usados')),
   fecha           date not null default current_date,
   monto           numeric(14,2),
   datos_extra     jsonb,
@@ -307,10 +306,10 @@ create table plantillas (
   id              bigint generated always as identity primary key,
   nombre          text not null,
   idioma          text not null default 'es_AR',
-  categoria       text not null default 'MARKETING' check (categoria in ('MARKETING','UTILITY','AUTHENTICATION')), -- (verificar)
+  categoria       text not null default 'MARKETING' check (categoria in ('MARKETING','UTILITY')),
   texto           text not null,
   variables       text[],
-  estado          text not null default 'borrador' check (estado in ('borrador','pendiente','aprobada','rechazada','pausada')), -- (verificar)
+  estado          text not null default 'borrador' check (estado in ('borrador','pendiente','aprobada','rechazada')),
   meta_id         text,
   motivo_rechazo  text,
   activa          boolean not null default true,

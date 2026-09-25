@@ -182,7 +182,7 @@ function Conversacion({ detalle, modo, porId, sucursal }: { detalle: DetalleLead
 function Burbuja({ m, autor }: { m: Mensaje; autor?: Usuario }) {
   const saliente = m.direccion === 'saliente';
   const hora = horaBandeja(m.creado_en) === horaLocal(m.creado_en) ? horaLocal(m.creado_en) : `${horaBandeja(m.creado_en)} · ${horaLocal(m.creado_en)}`;
-  const estado = m.autor_tipo === 'vendedor' && m.estado_envio === 'pendiente' ? ' · pendiente de envío' : m.estado_envio === 'error' ? ' · error al enviar' : '';
+  const estado = m.autor_tipo === 'vendedor' && m.estado_envio === 'pendiente' ? ' · pendiente de envío' : m.estado_envio === 'fallido' ? ' · no se pudo enviar' : '';
   return (
     <div className={`msg-row ${saliente ? 'msg-row-out' : 'msg-row-in'}`}>
       {m.autor_tipo === 'bot' && <div className="avatar avatar-mini avatar-bot" title="Bot">{Iconos.bot}</div>}

@@ -42,7 +42,7 @@ export const FORMAS_PAGO: { valor: string; etiqueta: string }[] = [
 ];
 export const etiquetaFormaPago = (v: string | null) => (v ? FORMAS_PAGO.find((f) => f.valor === v)?.etiqueta ?? v : 'A definir');
 
-export const ESTADO_TURNO_REALIZADO: EstadoTurno = 'realizado';
+export const ESTADO_TURNO_REALIZADO: EstadoTurno = 'hecho';
 
 export const HORAS_TURNO = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
 export const HORAS_ALERTA = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '18:00'];
