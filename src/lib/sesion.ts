@@ -19,18 +19,18 @@ export const obtenerSesion = cache(async (): Promise<Sesion> => {
   const uid = claims?.claims?.sub;
   if (!uid) redirect('/login');
 
-  const { data: usuario } = await supabase.from('usuarios').select('*').eq('auth_id', uid).maybeSingle<Usuario>();
-  if (!usuario || !usuario.activo) redirect('/login?error=usuario');
+  // Una sola consulta: la ficha, su sucursal y las sucursales que supervisa.
+  const { data } = await supabase
+    .from('usuarios')
+    .select('*, sucursal:sucursales!sucursal_id(*), supervisadas:supervisor_sucursales(sucursal_id)')
+    .eq('auth_id', uid)
+    .maybeSingle<Usuario & { sucursal: Sucursal | null; supervisadas: { sucursal_id: number }[] }>();
+  if (!data || !data.activo) redirect('/login?error=usuario');
 
-  const [{ data: sucursal }, { data: supervisadas }] = await Promise.all([
-    usuario.sucursal_id
-      ? supabase.from('sucursales').select('*').eq('id', usuario.sucursal_id).maybeSingle<Sucursal>()
-      : Promise.resolve({ data: null }),
-    supabase.from('supervisor_sucursales').select('sucursal_id').eq('usuario_id', usuario.id),
-  ]);
-  const misSucursales = [...new Set([usuario.sucursal_id, ...(supervisadas ?? []).map((s) => s.sucursal_id as number)])]
+  const { sucursal, supervisadas, ...usuario } = data;
+  const misSucursales = [...new Set([usuario.sucursal_id, ...supervisadas.map((s) => s.sucursal_id)])]
     .filter((id): id is number => id !== null);
-  return { usuario, sucursal: sucursal ?? null, misSucursales };
+  return { usuario, sucursal, misSucursales };
 });
 
 /** Exige uno de los roles indicados; si no, manda al inicio que le corresponde. */

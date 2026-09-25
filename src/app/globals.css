@@ -436,17 +436,60 @@
   .check-inline{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--ink);padding:3px 0;}
   .horario-dia{font-size:11px;font-weight:800;color:var(--navy-800);text-transform:capitalize;margin:14px 0 4px;}
 
-  /* Responsive básico: el diseño es de escritorio; en pantallas chicas se apilan columnas. */
+  /* Botones que solo existen en pantallas chicas (volver a la lista, ver datos del lead). */
+  .solo-movil,.solo-tablet{display:none;}
+  .movil-volver{border:none;background:none;font-size:26px;line-height:1;color:var(--navy-800);padding:0 6px 0 0;cursor:pointer;font-family:inherit;}
+  .movil-info{margin-left:auto;border:1px solid var(--silver);background:var(--white);border-radius:7px;font-size:11.5px;font-weight:700;color:var(--navy-800);padding:6px 11px;cursor:pointer;font-family:inherit;}
+  .movil-volver-chat{width:100%;text-align:left;border:none;border-bottom:1px solid var(--silver);background:var(--navy-50);font-size:12.5px;font-weight:700;color:var(--navy-800);padding:12px 16px;cursor:pointer;font-family:inherit;}
+
+  /* ---------- Tablet (hasta 1100px): se apilan columnas; los datos del lead se abren con el botón "Datos" ---------- */
   @media (max-width: 1100px){
     .dash-grid,.td-grid,.seg-grid,.pipe-grid,.admin-grid-3{grid-template-columns:1fr;}
     .pipe-summary{grid-template-columns:repeat(2,1fr);}
+    .solo-tablet{display:block;}
     .detail{display:none;}
+    .body-row[data-vista="info"] .conversation{display:none;}
+    .body-row[data-vista="info"] .detail{display:block;flex:1;width:auto;border-left:none;}
   }
+
+  /* ---------- Celular (hasta 760px) ---------- */
   @media (max-width: 760px){
-    .inbox{width:100% !important;}
-    .body-row .conversation{display:none;}
-    .topbar{padding:0 12px;}
-    .topbar-right .search-input,.topbar-right .status-toggle{display:none;}
-    .dash{padding:16px;}
-    .admin-table{display:block;overflow-x:auto;}
+    /* La barra de navegación pasa abajo, horizontal, como en una app. */
+    .app{flex-direction:column;}
+    .main-col{order:1;flex:1;min-height:0;}
+    .rail{order:2;width:100%;height:58px;flex-direction:row;padding:0 6px;gap:2px;justify-content:space-between;}
+    .rail-logo,.rail-spacer,.rail-avatar{display:none;}
+    .rail-group{flex-direction:row;gap:2px;overflow-x:auto;flex:1;min-width:0;justify-content:flex-start;scrollbar-width:none;}
+    .rail-group::-webkit-scrollbar{display:none;}
+    .rail-item{flex-shrink:0;width:42px;height:42px;}
+    .rail-logout{margin-top:0;flex-shrink:0;}
+
+    .topbar{height:auto;min-height:52px;padding:8px 12px;gap:8px;flex-wrap:wrap;}
+    .topbar h1{font-size:14px;}
+    .topbar-right{gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+    .topbar-right .filter-chip,.topbar-right > .avatar{display:none;}
+    .search-input{width:130px;padding:6px 9px;}
+    .status-opt{padding:5px 7px;font-size:10.5px;}
+
+    .dash{padding:12px;}
+    .dcard{padding:14px;}
+    .form-grid{grid-template-columns:1fr;}
+    .pipe-summary{grid-template-columns:1fr 1fr;gap:10px;}
+    .rank-cols{flex-direction:column;}
+    .podium{gap:8px;padding:8px 0 0;}
+    .admin-table{display:block;overflow-x:auto;white-space:nowrap;}
+    .slideover{width:100vw;}
+
+    /* Bandeja: una pantalla por vez. */
+    .solo-movil{display:block;}
+    .inbox{width:100% !important;border-right:none;}
+    .body-row[data-vista="lista"] .conversation,.body-row[data-vista="lista"] .detail{display:none;}
+    .body-row[data-vista="chat"] .inbox,.body-row[data-vista="info"] .inbox{display:none;}
+    .conv-header{padding:10px 12px;}
+    .conv-header-top{flex-wrap:wrap;gap:6px;}
+    .conv-header-top .pill{font-size:9px;}
+    .messages{padding:14px 12px;}
+    .msg-row{max-width:88%;}
+    .composer{padding:10px 12px;}
+    .composer-input{font-size:16px;} /* 16px evita que el iPhone haga zoom al escribir */
   }

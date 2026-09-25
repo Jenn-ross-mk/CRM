@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { enviarMensaje, marcarLeido } from '@/app/acciones/leads';
 import { ETIQUETA_CANAL, ETIQUETA_ESTADO_LEAD, etiquetaSector } from '@/lib/constantes';
 import type { DetalleLead } from '@/lib/datos';
@@ -38,6 +38,10 @@ export function Bandeja(props: PropsBandeja) {
   const pathname = usePathname();
   const params = useSearchParams();
   const [nuevoAbierto, setNuevoAbierto] = useState(false);
+  // En pantallas chicas se ve una sola parte por vez: la lista, el chat o los datos del lead.
+  const [vista, setVista] = useState<'lista' | 'chat' | 'info'>(params.get('lead') ? 'chat' : 'lista');
+  const [cargando, iniciar] = useTransition();
+  const [abriendo, setAbriendo] = useState<number | null>(null);
 
   const porId = useMemo(() => new Map(usuarios.map((u) => [u.id, u])), [usuarios]);
   const sucursalNombre = useMemo(() => new Map(sucursales.map((s) => [s.id, s.nombre])), [sucursales]);
@@ -52,7 +56,12 @@ export function Bandeja(props: PropsBandeja) {
   const navegar = (cambios: Record<string, string | null>) => {
     const p = new URLSearchParams(params);
     Object.entries(cambios).forEach(([k, v]) => (v === null ? p.delete(k) : p.set(k, v)));
-    router.push(`${pathname}?${p.toString()}`, { scroll: false });
+    iniciar(() => router.push(`${pathname}?${p.toString()}`, { scroll: false }));
+  };
+  const abrir = (id: number) => {
+    setAbriendo(id);
+    setVista('chat');
+    navegar({ lead: String(id) });
   };
 
   useEffect(() => {
@@ -67,9 +76,11 @@ export function Bandeja(props: PropsBandeja) {
   }, [seleccionado, params, pathname, router]);
 
   const lead = seleccionado?.lead;
+  const marcado = cargando && abriendo ? abriendo : lead?.id;
 
   return (
-    <div className="body-row" style={modo === 'gestion' ? { height: '100%' } : undefined}>
+    <div className="body-row" data-vista={vista} style={modo === 'gestion' ? { height: '100%' } : undefined}>
+      {cargando && <div className="loading-bar" />}
       <div className="inbox">
         <div className="inbox-tabs">
           <div className={`inbox-tab${filtroLeido === 'no' ? ' active' : ''}`} onClick={() => navegar({ f: null, lead: null })}>
@@ -85,7 +96,7 @@ export function Bandeja(props: PropsBandeja) {
         </div>
         <div className="inbox-list">
           {lista.length ? lista.map((l) => (
-            <div key={l.id} className={`chat-item${l.id === lead?.id ? ' selected' : ''}`} onClick={() => navegar({ lead: String(l.id) })}>
+            <div key={l.id} className={`chat-item${l.id === marcado ? ' selected' : ''}`} onClick={() => abrir(l.id)}>
               <Avatar nombre={l.nombre} />
               <div className="chat-meta">
                 <div className="chat-top-row">
@@ -115,8 +126,9 @@ export function Bandeja(props: PropsBandeja) {
 
       {seleccionado && lead ? (
         <>
-          <Conversacion detalle={seleccionado} modo={modo} porId={porId} sucursal={lead.sucursal_id ? sucursalNombre.get(lead.sucursal_id) ?? '—' : '—'} />
-          <PanelDetalle key={lead.id} {...props} detalle={seleccionado} porId={porId} sucursalNombre={sucursalNombre} />
+          <Conversacion detalle={seleccionado} modo={modo} porId={porId} sucursal={lead.sucursal_id ? sucursalNombre.get(lead.sucursal_id) ?? '—' : '—'}
+            onVolver={() => setVista('lista')} onInfo={() => setVista('info')} />
+          <PanelDetalle key={lead.id} {...props} detalle={seleccionado} porId={porId} sucursalNombre={sucursalNombre} onVolver={() => setVista('chat')} />
         </>
       ) : (
         <div className="conversation">
@@ -129,12 +141,14 @@ export function Bandeja(props: PropsBandeja) {
       )}
 
       <FormNuevoLead abierto={nuevoAbierto} onCerrar={() => setNuevoAbierto(false)} {...props}
-        onCreado={(id) => { setNuevoAbierto(false); navegar({ lead: id, f: 'si' }); }} />
+        onCreado={(id) => { setNuevoAbierto(false); setVista('chat'); navegar({ lead: id, f: 'si' }); }} />
     </div>
   );
 }
 
-function Conversacion({ detalle, modo, porId, sucursal }: { detalle: DetalleLead; modo: 'vendedor' | 'gestion'; porId: Map<number, Usuario>; sucursal: string }) {
+function Conversacion({ detalle, modo, porId, sucursal, onVolver, onInfo }: {
+  detalle: DetalleLead; modo: 'vendedor' | 'gestion'; porId: Map<number, Usuario>; sucursal: string; onVolver: () => void; onInfo: () => void;
+}) {
   const { lead, mensajes } = detalle;
   const [texto, setTexto] = useState('');
   const { pendiente, resultado, ejecutar } = useAccion();
@@ -155,7 +169,9 @@ function Conversacion({ detalle, modo, porId, sucursal }: { detalle: DetalleLead
     <div className="conversation">
       <div className="conv-header">
         <div className="conv-header-top">
+          <button className="movil-volver solo-movil" onClick={onVolver} aria-label="Volver a la lista">‹</button>
           <span className="conv-name">{lead.nombre}</span>
+          <button className="movil-info solo-tablet" onClick={onInfo}>Datos</button>
           <span className={`pill ${lead.prioridad === 'alta' ? 'pill-navy' : lead.prioridad === 'media' ? 'pill-charcoal' : 'pill-outline'}`}>{prioridad}</span>
           <span className="pill pill-outline">{etiquetaSector(lead.sector)}</span>
           {modo === 'gestion' && <span className="pill pill-outline">{ETIQUETA_ESTADO_LEAD[lead.estado] ?? lead.estado}</span>}

@@ -11,13 +11,14 @@ import { Iconos } from '../iconos';
 import { Toast, useAccion, Vacio } from '../ui';
 import type { PropsBandeja } from './bandeja';
 
-type Props = PropsBandeja & { detalle: DetalleLead; porId: Map<number, Usuario>; sucursalNombre: Map<number, string> };
+type Props = PropsBandeja & { detalle: DetalleLead; porId: Map<number, Usuario>; sucursalNombre: Map<number, string>; onVolver?: () => void };
 
 export function PanelDetalle(props: Props) {
   const [tab, setTab] = useState<'info' | 'actividad' | 'recordatorios'>('info');
   const { detalle } = props;
   return (
     <div className="detail">
+      <button className="movil-volver-chat solo-tablet" onClick={props.onVolver}>‹ Volver al chat</button>
       <div className="detail-tabs">
         <div className={`detail-tab${tab === 'info' ? ' active' : ''}`} onClick={() => setTab('info')}>Info</div>
         <div className={`detail-tab${tab === 'actividad' ? ' active' : ''}`} onClick={() => setTab('actividad')}>Actividad</div>

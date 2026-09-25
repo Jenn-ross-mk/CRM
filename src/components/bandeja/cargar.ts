@@ -9,7 +9,9 @@ export type ParamsBandeja = { f?: string; lead?: string; q?: string; v?: string 
 export async function cargarBandeja(modo: 'vendedor' | 'gestion', sesion: Sesion, params: ParamsBandeja): Promise<PropsBandeja> {
   const yo = sesion.usuario;
   const filtroLeido = params.f === 'si' ? 'si' : 'no';
-  const [leads, usuarios, sucursales, modelos, etapas, etiquetas] = await Promise.all([
+  // Si la URL ya dice qué lead abrir, su detalle se busca en paralelo con la lista.
+  const leadPedido = Number(params.lead) || null;
+  const [leads, usuarios, sucursales, modelos, etapas, etiquetas, detallePedido] = await Promise.all([
     listarBandeja({
       vendedorId: modo === 'vendedor' ? yo.id : params.v && params.v !== '__sin__' ? Number(params.v) || null : null,
       sinAsignar: modo === 'gestion' && params.v === '__sin__',
@@ -20,11 +22,14 @@ export async function cargarBandeja(modo: 'vendedor' | 'gestion', sesion: Sesion
     listarModelos(),
     listarEtapas(),
     listarEtiquetas(),
+    leadPedido ? detalleLead(leadPedido) : Promise.resolve(null),
   ]);
 
-  let leadId = Number(params.lead) || null;
-  if (!leadId) leadId = leads.find((l) => (filtroLeido === 'no' ? !l.leido : l.leido))?.id ?? null;
-  const seleccionado = leadId ? await detalleLead(leadId) : null;
+  let seleccionado = detallePedido;
+  if (!leadPedido) {
+    const primero = leads.find((l) => (filtroLeido === 'no' ? !l.leido : l.leido))?.id;
+    if (primero) seleccionado = await detalleLead(primero);
+  }
 
   return { modo, leads, filtroLeido, seleccionado, usuarios, sucursales, modelos, etapas, etiquetas, yo, misSucursales: sesion.misSucursales };
 }

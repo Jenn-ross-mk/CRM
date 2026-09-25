@@ -60,9 +60,9 @@ export async function listarBandeja(filtros: { vendedorId?: number | null; sinAs
 
 export async function detalleLead(id: number): Promise<DetalleLead | null> {
   const supabase = await crearClienteServidor();
-  const { data: lead } = await supabase.from('bandeja').select('*').eq('id', id).maybeSingle<LeadBandeja>();
-  if (!lead) return null;
-  const [mensajes, notas, alertas, turnos, etiquetas, venta] = await Promise.all([
+  // Todo en paralelo: si el lead no es visible (RLS), las demás consultas vuelven vacías.
+  const [{ data: lead }, mensajes, notas, alertas, turnos, etiquetas, venta] = await Promise.all([
+    supabase.from('bandeja').select('*').eq('id', id).maybeSingle<LeadBandeja>(),
     supabase.from('mensajes').select('*').eq('lead_id', id).order('creado_en').order('id'),
     supabase.from('notas').select('*').eq('lead_id', id).order('creado_en'),
     supabase.from('alertas').select('*').eq('lead_id', id).order('fecha_hora'),
@@ -70,6 +70,7 @@ export async function detalleLead(id: number): Promise<DetalleLead | null> {
     supabase.from('lead_etiquetas').select('etiquetas(*)').eq('lead_id', id).order('creado_en'),
     supabase.from('ventas').select('*').eq('lead_id', id).limit(1).maybeSingle(),
   ]);
+  if (!lead) return null;
   return {
     lead,
     mensajes: (mensajes.data ?? []) as Mensaje[],
