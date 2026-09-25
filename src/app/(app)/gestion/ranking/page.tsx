@@ -4,7 +4,7 @@ import { cargarRanking, type ParamsRanking } from '@/lib/ranking-pagina';
 import { exigirRol } from '@/lib/sesion';
 
 export default async function RankingGestionPage({ searchParams }: { searchParams: Promise<ParamsRanking> }) {
-  await exigirRol(['administrador', 'supervisor']);
+  await exigirRol(['admin', 'supervisor']);
   const params = await searchParams;
   const r = await cargarRanking(params);
   return (

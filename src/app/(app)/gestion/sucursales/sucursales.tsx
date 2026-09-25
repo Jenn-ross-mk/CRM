@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { eliminarSucursal, guardarSucursal } from '@/app/acciones/equipo';
+import { cambiarSucursalActiva, guardarSucursal } from '@/app/acciones/equipo';
 import { SlideOver, Toast, useAccion } from '@/components/ui';
 import type { Sucursal } from '@/lib/tipos';
 import { plural } from '@/lib/util';
@@ -11,7 +11,7 @@ export function GestionSucursales({ sucursales, vendedores }: { sucursales: Sucu
   return (
     <div className="dash">
       <div className="pipe-filters">
-        <span className="pipe-filters-note">Hacé clic en una sucursal para editarla o eliminarla.</span>
+        <span className="pipe-filters-note">Hacé clic en una sucursal para editarla o desactivarla.</span>
         <button className="btn-add-vendedor" onClick={() => setEditando('nueva')}>+ Nueva sucursal</button>
       </div>
       <div className="dcard">
@@ -20,7 +20,7 @@ export function GestionSucursales({ sucursales, vendedores }: { sucursales: Sucu
           <tbody>
             {sucursales.map((s) => (
               <tr key={s.id} className="clickable" onClick={() => setEditando(s)}>
-                <td className="venta-cliente">{s.nombre}</td><td>{s.direccion}</td><td>{s.telefono}</td><td>{vendedores[s.id] ?? 0}</td><td className="venta-chevron">›</td>
+                <td className="venta-cliente">{s.nombre}{s.activa ? '' : ' (inactiva)'}</td><td>{s.direccion ?? '—'}</td><td>{s.telefono ?? '—'}</td><td>{vendedores[s.id] ?? 0}</td><td className="venta-chevron">›</td>
               </tr>
             ))}
           </tbody>
@@ -50,18 +50,19 @@ function FormSucursal({ sucursal, cantidad, onListo }: { sucursal: Sucursal | nu
       <form className="detail-block" style={{ padding: '0 0 16px' }} action={(fd) => guardar.ejecutar(() => guardarSucursal(sucursal?.id ?? null, fd), (r) => r.ok && onListo())}>
         <p className="detail-label">{sucursal ? 'Editar datos' : 'Datos de la nueva sucursal'}</p>
         <div className="fld" style={{ marginBottom: 9 }}><label>Nombre</label><input name="nombre" defaultValue={sucursal?.nombre} placeholder="Ej: Sur" required /></div>
-        <div className="fld" style={{ marginBottom: 9 }}><label>Dirección</label><input name="direccion" defaultValue={sucursal?.direccion} placeholder="Ej: Av. Principal 000" /></div>
-        <div className="fld"><label>Teléfono</label><input name="telefono" defaultValue={sucursal?.telefono} placeholder="Ej: 297 400-3000" /></div>
+        <div className="fld" style={{ marginBottom: 9 }}><label>Dirección</label><input name="direccion" defaultValue={sucursal?.direccion ?? ''} placeholder="Ej: Av. Principal 000" /></div>
+        <div className="fld"><label>Teléfono</label><input name="telefono" defaultValue={sucursal?.telefono ?? ''} placeholder="Ej: 297 400-3000" /></div>
         <button className="alert-btn" style={{ width: '100%', marginTop: 12, padding: '9px 12px' }} disabled={guardar.pendiente}>{sucursal ? 'Guardar cambios' : 'Crear sucursal'}</button>
         <Toast resultado={guardar.resultado?.ok ? null : guardar.resultado} />
       </form>
       {sucursal && (
         <>
           <button className="btn-danger-outline" disabled={borrar.pendiente} onClick={() => {
-            let msg = `¿Eliminar la sucursal ${sucursal.nombre}?`;
-            if (cantidad > 0) msg += ` Tiene ${cantidad} ${plural(cantidad, 'vendedor', 'vendedores')}, que van a quedar sin sucursal hasta que se reasignen.`;
-            if (confirm(msg)) borrar.ejecutar(() => eliminarSucursal(sucursal.id), (r) => r.ok && onListo());
-          }}>Eliminar sucursal</button>
+            if (!sucursal.activa) { borrar.ejecutar(() => cambiarSucursalActiva(sucursal.id, true), (r) => r.ok && onListo()); return; }
+            let msg = `¿Desactivar la sucursal ${sucursal.nombre}? No se borra: sus datos quedan guardados.`;
+            if (cantidad > 0) msg += ` Tiene ${cantidad} ${plural(cantidad, 'vendedor', 'vendedores')} activos.`;
+            if (confirm(msg)) borrar.ejecutar(() => cambiarSucursalActiva(sucursal.id, false), (r) => r.ok && onListo());
+          }}>{sucursal.activa ? 'Desactivar sucursal' : 'Reactivar sucursal'}</button>
           <Toast resultado={borrar.resultado?.ok ? null : borrar.resultado} />
         </>
       )}

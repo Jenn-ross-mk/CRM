@@ -15,7 +15,7 @@ export function Seguimiento({ conteos, pendientes, rutaLead, nombres, sub }: {
   conteos: number[];
   pendientes: PendienteSeguimiento[];
   rutaLead: string;
-  nombres?: Record<string, string>;
+  nombres?: Record<number, string>;
   sub: string;
 }) {
   return (

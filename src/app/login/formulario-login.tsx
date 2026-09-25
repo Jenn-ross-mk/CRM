@@ -3,8 +3,8 @@
 import { useActionState, useState, useTransition } from 'react';
 import { iniciarSesion, solicitarRecuperacion } from '../acciones/auth';
 
-export default function FormularioLogin() {
-  const [error, accion, pendiente] = useActionState(iniciarSesion, null);
+export default function FormularioLogin({ errorInicial }: { errorInicial: string | null }) {
+  const [error, accion, pendiente] = useActionState(iniciarSesion, errorInicial);
   const [email, setEmail] = useState('');
   const [aviso, setAviso] = useState<string | null>(null);
   const [enviando, iniciar] = useTransition();
@@ -13,7 +13,7 @@ export default function FormularioLogin() {
     <form action={accion}>
       <div className="fld">
         <label htmlFor="email">Email</label>
-        <input id="email" name="email" type="email" autoComplete="username" placeholder="nombre@akarautomotores.com.ar"
+        <input id="email" name="email" type="email" autoComplete="username" placeholder="nombre@akar.com.ar"
           value={email} onChange={(e) => setEmail(e.target.value)} required />
       </div>
       <div className="fld">

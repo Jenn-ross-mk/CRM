@@ -1,6 +1,6 @@
 import type { Rol } from '@/lib/tipos';
 
-export type IconoNav = 'inicio' | 'mensajes' | 'calendario' | 'reloj' | 'trofeo' | 'embudo' | 'personas' | 'ubicacion' | 'documento' | 'megafono';
+export type IconoNav = 'inicio' | 'mensajes' | 'calendario' | 'reloj' | 'trofeo' | 'embudo' | 'personas' | 'ubicacion' | 'documento' | 'megafono' | 'horario';
 
 export interface ItemNav {
   href: string;
@@ -21,6 +21,7 @@ const GESTION: (ItemNav & { soloAdmin?: boolean })[] = [
   { href: '/gestion/pipeline', titulo: 'Pipeline', icono: 'embudo' },
   { href: '/gestion/seguimiento', titulo: 'Seguimiento', icono: 'reloj' },
   { href: '/gestion/vendedores', titulo: 'Vendedores', icono: 'personas', soloAdmin: true },
+  { href: '/gestion/horarios', titulo: 'Horarios', icono: 'horario', soloAdmin: true },
   { href: '/gestion/sucursales', titulo: 'Sucursales', icono: 'ubicacion', soloAdmin: true },
   { href: '/gestion/ranking', titulo: 'Ranking', icono: 'trofeo' },
   { href: '/gestion/test-drives', titulo: 'Test drives', icono: 'calendario' },
@@ -30,11 +31,11 @@ const GESTION: (ItemNav & { soloAdmin?: boolean })[] = [
 
 export function itemsPorRol(rol: Rol): ItemNav[] {
   if (rol === 'vendedor') return VENDEDOR;
-  return GESTION.filter((i) => rol === 'administrador' || !i.soloAdmin);
+  return GESTION.filter((i) => rol === 'admin' || !i.soloAdmin);
 }
 
 export const ETIQUETA_ROL: Record<Rol, string> = {
   vendedor: 'Vendedor',
   supervisor: 'Supervisor',
-  administrador: 'Administrador',
+  admin: 'Administrador',
 };

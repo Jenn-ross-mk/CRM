@@ -3,10 +3,13 @@
 import { useState } from 'react';
 import { agregarCampoExtra, crearVenta } from '@/app/acciones/ventas';
 import { SlideOver, Toast, useAccion } from '@/components/ui';
+import { ETIQUETA_SECTOR, SECTORES_VENTA, etiquetaSector } from '@/lib/constantes';
 import { fechaLarga, fechaLocal } from '@/lib/fechas';
-import type { Perfil, Sucursal, Venta } from '@/lib/tipos';
+import type { Sucursal, Usuario, Venta } from '@/lib/tipos';
 
-type Props = { ventas: Venta[]; nombres: Record<string, string>; sucursales: Sucursal[]; vendedores: Perfil[]; modelos: string[] };
+const pesos = (n: number | null) => (n === null ? '—' : n.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }));
+
+type Props = { ventas: Venta[]; nombres: Record<number, string>; sucursales: Sucursal[]; vendedores: Usuario[]; modelos: string[] };
 
 export function TablaVentas({ ventas, nombres, sucursales, vendedores, modelos }: Props) {
   const [abiertaId, setAbiertaId] = useState<number | null>(null);
@@ -25,11 +28,11 @@ export function TablaVentas({ ventas, nombres, sucursales, vendedores, modelos }
           <tbody>
             {ventas.map((v) => (
               <tr key={v.id} className="clickable" onClick={() => setAbiertaId(v.id)}>
-                <td className="venta-cliente">{v.cliente}</td>
+                <td className="venta-cliente">{v.cliente_nombre}</td>
                 <td>{v.vehiculo}</td>
-                <td>{v.vendedor_id ? nombres[v.vendedor_id] ?? '—' : 'Sin vendedor'}</td>
+                <td>{nombres[v.vendedor_id] ?? '—'}</td>
                 <td><span className="pill">{nombreSuc(v.sucursal_id)}</span></td>
-                <td><span className="pill">{v.sector}</span></td>
+                <td><span className="pill">{etiquetaSector(v.sector)}</span></td>
                 <td>{fechaLarga(v.fecha)}</td>
                 <td className="venta-chevron">›</td>
               </tr>
@@ -40,7 +43,7 @@ export function TablaVentas({ ventas, nombres, sucursales, vendedores, modelos }
       </div>
 
       <SlideOver abierto={!!abierta} titulo="Detalle de la venta" onCerrar={() => setAbiertaId(null)}>
-        {abierta && <DetalleVenta venta={abierta} vendedor={abierta.vendedor_id ? nombres[abierta.vendedor_id] : '—'} sucursal={nombreSuc(abierta.sucursal_id)} />}
+        {abierta && <DetalleVenta venta={abierta} vendedor={nombres[abierta.vendedor_id] ?? '—'} sucursal={nombreSuc(abierta.sucursal_id)} />}
       </SlideOver>
       <SlideOver abierto={nueva} titulo="Registrar venta" onCerrar={() => setNueva(false)}>
         <FormVenta vendedores={vendedores} sucursales={sucursales} modelos={modelos} onListo={() => setNueva(false)} />
@@ -57,12 +60,12 @@ function DetalleVenta({ venta, vendedor, sucursal }: { venta: Venta; vendedor: s
     <>
       <div className="venta-hero">
         <div className="vh-model">{venta.vehiculo}</div>
-        <div className="vh-sub">{venta.sector} · {fechaLarga(venta.fecha)}</div>
-        <div className="vh-amount">{venta.monto}</div>
+        <div className="vh-sub">{etiquetaSector(venta.sector)} · {fechaLarga(venta.fecha)}</div>
+        <div className="vh-amount">{pesos(venta.monto)}</div>
       </div>
       <div className="detail-block" style={{ padding: '0 0 16px' }}>
         <p className="detail-label">Datos generales</p>
-        <div className="field-row"><span className="field-key">Cliente</span><span className="field-val">{venta.cliente}</span></div>
+        <div className="field-row"><span className="field-key">Cliente</span><span className="field-val">{venta.cliente_nombre}</span></div>
         <div className="field-row"><span className="field-key">Vendedor</span><span className="field-val">{vendedor}</span></div>
         <div className="field-row"><span className="field-key">Sucursal</span><span className="field-val">{sucursal}</span></div>
         <div className="field-row"><span className="field-key">Fecha</span><span className="field-val">{fechaLarga(venta.fecha)}</span></div>
@@ -70,7 +73,7 @@ function DetalleVenta({ venta, vendedor, sucursal }: { venta: Venta; vendedor: s
       </div>
       <div className="detail-block" style={{ padding: '16px 0 0', borderTop: '1px solid var(--silver-light)' }}>
         <p className="detail-label">Datos adicionales</p>
-        {venta.extra.map((f, i) => (
+        {(venta.datos_extra ?? []).map((f, i) => (
           <div key={i} className="extra-field-row"><span className="field-key">{f.k}</span><span className="field-val">{f.v}</span></div>
         ))}
         <form className="extra-add-form" onSubmit={(e) => { e.preventDefault(); ejecutar(() => agregarCampoExtra(venta.id, { k, v }), (r) => { if (r.ok) { setK(''); setV(''); } }); }}>
@@ -84,16 +87,16 @@ function DetalleVenta({ venta, vendedor, sucursal }: { venta: Venta; vendedor: s
   );
 }
 
-function FormVenta({ vendedores, sucursales, modelos, onListo }: { vendedores: Perfil[]; sucursales: Sucursal[]; modelos: string[]; onListo: () => void }) {
+function FormVenta({ vendedores, sucursales, modelos, onListo }: { vendedores: Usuario[]; sucursales: Sucursal[]; modelos: string[]; onListo: () => void }) {
   const { pendiente, resultado, ejecutar } = useAccion();
   return (
     <form action={(fd) => ejecutar(() => crearVenta(fd), (r) => r.ok && onListo())}>
       <div className="detail-block" style={{ padding: '0 0 16px' }}>
         <p className="detail-label">Datos de la venta</p>
         <div className="fld" style={{ marginBottom: 9 }}><label>Cliente</label><input name="cliente" required /></div>
-        <div className="fld" style={{ marginBottom: 9 }}><label>Vehículo</label><select name="vehiculo">{modelos.map((m) => <option key={m}>{m}</option>)}</select></div>
+        <div className="fld" style={{ marginBottom: 9 }}><label>Vehículo</label><input name="vehiculo" list="lista-modelos-venta" required placeholder="Ej: Onix" /><datalist id="lista-modelos-venta">{modelos.map((m) => <option key={m} value={m} />)}</datalist></div>
         <div className="fld" style={{ marginBottom: 9 }}><label>Vendedor</label>
-          <select name="vendedor_id" required>{vendedores.map((v) => <option key={v.id} value={v.id}>{v.nombre} · {v.sector}</option>)}</select>
+          <select name="vendedor_id" required>{vendedores.map((v) => <option key={v.id} value={v.id}>{v.nombre} · {etiquetaSector(v.sector)}</option>)}</select>
         </div>
         <div className="form-grid" style={{ marginBottom: 9 }}>
           <div className="fld"><label>Sucursal</label>
@@ -101,7 +104,12 @@ function FormVenta({ vendedores, sucursales, modelos, onListo }: { vendedores: P
           </div>
           <div className="fld"><label>Fecha</label><input type="date" name="fecha" defaultValue={fechaLocal()} /></div>
         </div>
-        <div className="fld"><label>Monto / cuota</label><input name="monto" placeholder="$ 30.000.000 o Cuota N.º 1 de 84" /></div>
+        <div className="form-grid">
+          <div className="fld"><label>Sector</label>
+            <select name="sector" defaultValue=""><option value="">El del vendedor</option>{SECTORES_VENTA.map((s) => <option key={s} value={s}>{ETIQUETA_SECTOR[s]}</option>)}</select>
+          </div>
+          <div className="fld"><label>Monto ($)</label><input name="monto" inputMode="decimal" placeholder="30.000.000" /></div>
+        </div>
         <button className="alert-btn" style={{ width: '100%', marginTop: 12, padding: '10px 12px' }} disabled={pendiente}>Registrar venta</button>
         <Toast resultado={resultado?.ok ? null : resultado} />
       </div>

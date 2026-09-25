@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition } from 'react';
 import type { Resultado } from '@/lib/tipos';
+import { iniciales } from '@/lib/util';
 
 /** Panel lateral deslizable (mismo estilo que los slide-overs del mockup). */
 export function SlideOver({ abierto, titulo, onCerrar, children }: { abierto: boolean; titulo: string; onCerrar: () => void; children: React.ReactNode }) {
@@ -52,3 +53,13 @@ export function useAccion() {
 export const Vacio = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
   <p className="empty-state" style={style}>{children}</p>
 );
+
+/** Avatar de un usuario: su foto si tiene, si no sus iniciales. */
+export function Avatar({ nombre, foto, mini, titulo }: { nombre: string; foto?: string | null; mini?: boolean; titulo?: string }) {
+  return (
+    <div className={`avatar${mini ? ' avatar-mini' : ''}`} title={titulo ?? nombre}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- fotos externas de URL libre */}
+      {foto ? <img src={foto} alt={nombre} /> : iniciales(nombre)}
+    </div>
+  );
+}

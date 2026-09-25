@@ -1,14 +1,49 @@
-import type { Sector } from './tipos';
+import type { Canal, EstadoLead, EstadoTurno, EtapaPipeline, Sector } from './tipos';
 
-/** Etapas del pipeline por sector. El índice coincide con `leads.etapa` (0..5). */
-export const ETAPAS: Record<Sector, string[]> = {
-  Convencional: ['Nuevo', 'Contactado', 'Test drive agendado', 'Cotización', 'Negociación', 'Ganado'],
-  'Plan de ahorro': ['Nuevo', 'Contactado', 'Explicación del sistema', 'Suscripción firmada', 'En espera de adjudicación', 'Adjudicado'],
+// Los valores guardados en la base van en minúscula y snake_case; estas tablas dan el texto que se muestra.
+export const ETIQUETA_SECTOR: Record<Sector, string> = {
+  convencional: 'Convencional',
+  plan_ahorro: 'Plan de ahorro',
+  usados: 'Usados',
+  postventa: 'Postventa',
+  repuestos: 'Repuestos',
 };
-export const ETAPA_FINAL = 5;
+/** Sectores en los que trabajan los vendedores (asignación, ranking y ventas). */
+export const SECTORES_VENTA: Sector[] = ['convencional', 'plan_ahorro', 'usados'];
+export const etiquetaSector = (s: Sector | null | undefined) => (s ? ETIQUETA_SECTOR[s] ?? s : 'Sin sector');
 
-export const SECTORES: Sector[] = ['Convencional', 'Plan de ahorro'];
-export const CANALES = ['WhatsApp', 'Instagram', 'Web', 'Marketplace', 'Teléfono', 'Presencial'] as const;
+export const ETIQUETA_CANAL: Record<Canal, string> = {
+  whatsapp: 'WhatsApp',
+  messenger: 'Messenger',
+  instagram: 'Instagram',
+  web: 'Web',
+  marketplace: 'Marketplace',
+  telefono: 'Teléfono',
+  presencial: 'Presencial',
+};
+/** Canales que se pueden elegir al cargar un lead a mano. */
+export const CANALES_MANUALES: Canal[] = ['telefono', 'presencial', 'whatsapp', 'instagram', 'messenger', 'web', 'marketplace'];
+
+export const ETIQUETA_ESTADO_LEAD: Record<EstadoLead, string> = {
+  en_conversacion: 'Hablando con el bot',
+  en_cola: 'En cola (fuera de horario)',
+  asignacion_manual: 'Asignación manual',
+  derivado: 'Derivado',
+  perdido: 'Perdido',
+  recuperar: 'Para recuperar',
+  no_contactar: 'No contactar',
+  cerrado: 'Cerrado',
+};
+
+export const FORMAS_PAGO: { valor: string; etiqueta: string }[] = [
+  { valor: 'contado', etiqueta: 'Contado' },
+  { valor: 'financiacion', etiqueta: 'Financiación' },
+  { valor: 'plan_ahorro', etiqueta: 'Plan de ahorro' },
+];
+export const etiquetaFormaPago = (v: string | null) => (v ? FORMAS_PAGO.find((f) => f.valor === v)?.etiqueta ?? v : 'A definir');
+
+export const ESTADO_TURNO_REALIZADO: EstadoTurno = 'realizado';
+
 export const HORAS_TURNO = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
 export const HORAS_ALERTA = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '18:00'];
 
@@ -28,3 +63,21 @@ export const TEXTO_EMBUDO = ['#0A0A0A', '#0A0A0A', '#fff', '#fff', '#fff', '#fff
 
 export const PLANTILLA_SEGUIMIENTO = (nombre: string) =>
   `Hola ${nombre.split(' ')[0]}, ¿cómo estás? Te escribo de Akar Automotores para saber si seguís interesado/a. ¡Quedo atento/a a cualquier consulta!`;
+
+// ---------- Etapas del pipeline (vienen de la tabla etapas_pipeline) ----------
+
+/** Etapas de un sector ordenadas por `orden` (1 = Nuevo). */
+export const etapasDe = (etapas: EtapaPipeline[], sector: Sector | null) =>
+  etapas.filter((e) => e.sector === sector).sort((a, b) => a.orden - b.orden);
+
+/** Sectores que tienen pipeline cargado. */
+export const sectoresConPipeline = (etapas: EtapaPipeline[]) =>
+  SECTORES_VENTA.filter((s) => etapas.some((e) => e.sector === s));
+
+/** Orden de la etapa de un lead. Un lead sin etapa cuenta como "Nuevo" (orden 1). */
+export const ordenEtapa = (etapas: EtapaPipeline[], etapaId: number | null) =>
+  etapas.find((e) => e.id === etapaId)?.orden ?? 1;
+
+/** Orden de la última etapa (Ganado / Adjudicado) de un sector. */
+export const ordenFinal = (etapas: EtapaPipeline[], sector: Sector | null) =>
+  Math.max(0, ...etapasDe(etapas, sector).map((e) => e.orden));

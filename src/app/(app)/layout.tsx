@@ -2,9 +2,9 @@ import { Shell } from '@/components/shell';
 import { obtenerSesion } from '@/lib/sesion';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { perfil, sucursal } = await obtenerSesion();
+  const { usuario, sucursal, misSucursales } = await obtenerSesion();
   return (
-    <Shell perfil={perfil} sucursal={sucursal?.nombre ?? null}>
+    <Shell usuario={usuario} sucursal={misSucursales.length > 1 ? `${misSucursales.length} sucursales` : sucursal ? `Sucursal ${sucursal.nombre}` : null}>
       {children}
     </Shell>
   );

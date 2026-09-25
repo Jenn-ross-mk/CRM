@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "node --env-file=.env.local scripts/seed.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

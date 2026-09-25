@@ -3,8 +3,8 @@ import { calcularSeguimiento } from '@/lib/datos';
 import { exigirRol } from '@/lib/sesion';
 
 export default async function SeguimientoPage() {
-  const { perfil } = await exigirRol(['vendedor']);
-  const { conteos, pendientes } = await calcularSeguimiento({ vendedorId: perfil.id });
+  const { usuario } = await exigirRol(['vendedor']);
+  const { conteos, pendientes } = await calcularSeguimiento({ vendedorId: usuario.id });
   return (
     <div className="dash">
       <div className="pipe-filters">

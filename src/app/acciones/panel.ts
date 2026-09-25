@@ -2,9 +2,8 @@
 
 import { refresh } from 'next/cache';
 import { contexto, error, ok } from '@/lib/acciones';
+import { instanteLocal } from '@/lib/fechas';
 import type { Resultado } from '@/lib/tipos';
-
-type Tabla = 'comunicados' | 'giras' | 'entregas';
 
 async function gestionar(fn: (sb: Awaited<ReturnType<typeof contexto>>['supabase']) => PromiseLike<{ error: unknown }>): Promise<Resultado> {
   const { supabase, esGestion } = await contexto();
@@ -15,31 +14,39 @@ async function gestionar(fn: (sb: Awaited<ReturnType<typeof contexto>>['supabase
   return ok();
 }
 
-// Los textos se cargan en una sola línea separando partes con "·", igual que en el mockup.
-const partes = (t: string) => t.split('·').map((p) => p.trim()).filter(Boolean);
+const esFecha = (f: string) => /^\d{4}-\d{2}-\d{2}$/.test(f);
 
-export async function agregarComunicado(textoLibre: string, tag = 'INFO'): Promise<Resultado> {
-  const [texto, detalle] = partes(textoLibre);
+// El comunicado se carga en una línea: "texto · cuándo" (igual que en el mockup).
+export async function agregarComunicado(textoLibre: string, categoria = 'INFO'): Promise<Resultado> {
+  const [texto, cuando] = textoLibre.split('·').map((p) => p.trim()).filter(Boolean);
   if (!texto) return error('Escribí el comunicado.');
-  return gestionar((sb) => sb.from('comunicados').insert({ tag: tag.trim().toUpperCase().slice(0, 6) || 'INFO', texto, detalle: detalle ?? 'Agregado por administración' }));
+  return gestionar((sb) => sb.from('comunicados').insert({ categoria: categoria.trim().toUpperCase().slice(0, 6) || 'INFO', texto, cuando: cuando ?? null }));
 }
 
-export async function agregarGira(textoLibre: string): Promise<Resultado> {
-  const [destino, fecha, unidades] = partes(textoLibre);
+/** Los comunicados no se borran: se ocultan (activo = false). */
+export async function ocultarComunicado(id: number): Promise<Resultado> {
+  return gestionar((sb) => sb.from('comunicados').update({ activo: false }).eq('id', id));
+}
+
+export async function agregarGira(datos: { destino: string; fecha: string; hora: string; unidades: string }): Promise<Resultado> {
+  const destino = datos.destino.trim();
   if (!destino) return error('Escribí el destino de la gira.');
-  return gestionar((sb) => sb.from('giras').insert({ destino, fecha: fecha ?? 'A confirmar', unidades: unidades ?? 'Por confirmar' }));
+  if (!esFecha(datos.fecha) || !/^\d{2}:\d{2}$/.test(datos.hora)) return error('Elegí la fecha y la hora de la gira.');
+  return gestionar((sb) => sb.from('giras_plan_ahorro').insert({ destino, fecha_hora: instanteLocal(datos.fecha, datos.hora), unidades: datos.unidades.trim() || null }));
 }
 
-export async function agregarEntrega(textoLibre: string): Promise<Resultado> {
-  const [vehiculo, cliente, dia] = partes(textoLibre);
-  if (!vehiculo) return error('Escribí el vehículo a entregar.');
-  return gestionar((sb) => sb.from('entregas').insert({ vehiculo, cliente: cliente ?? '—', dia: dia ?? 'Por definir' }));
+export async function agregarEntrega(datos: { vehiculo: string; cliente: string; fecha: string }): Promise<Resultado> {
+  const vehiculo = datos.vehiculo.trim();
+  const cliente = datos.cliente.trim();
+  if (!vehiculo || !cliente) return error('Completá el vehículo y el cliente.');
+  if (!esFecha(datos.fecha)) return error('Elegí la fecha de entrega.');
+  return gestionar((sb) => sb.from('entregas').insert({ vehiculo, cliente_nombre: cliente, fecha: datos.fecha }));
 }
 
 export async function marcarEntregada(id: number): Promise<Resultado> {
-  return gestionar((sb) => sb.from('entregas').update({ hecha: true }).eq('id', id));
+  return gestionar((sb) => sb.from('entregas').update({ entregada: true }).eq('id', id));
 }
 
-export async function eliminarItemPanel(tabla: Tabla, id: number): Promise<Resultado> {
+export async function eliminarItemPanel(tabla: 'giras_plan_ahorro' | 'entregas', id: number): Promise<Resultado> {
   return gestionar((sb) => sb.from(tabla).delete().eq('id', id));
 }

@@ -10,12 +10,12 @@ export async function crearAlerta(datos: { fecha: string; hora: string; mensaje:
   const mensaje = datos.mensaje.trim();
   if (!datos.fecha || !datos.hora || !mensaje) return error('Completá la fecha, la hora y el mensaje.');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.fecha) || !/^\d{2}:\d{2}$/.test(datos.hora)) return error('Fecha u hora inválida.');
-  const { supabase, perfil } = await contexto();
+  const { supabase, usuario } = await contexto();
   const { error: e } = await supabase.from('alertas').insert({
-    owner_id: perfil.id,
+    usuario_id: usuario.id,
     lead_id: datos.leadId,
     mensaje,
-    fecha: instanteLocal(datos.fecha, datos.hora),
+    fecha_hora: instanteLocal(datos.fecha, datos.hora),
   });
   if (e) return error(e);
   refresh();

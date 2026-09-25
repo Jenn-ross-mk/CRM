@@ -15,12 +15,12 @@ export async function iniciarSesion(_prev: string | null, formData: FormData): P
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !data.user) return 'Email o contraseña incorrectos.';
 
-  const { data: perfil } = await supabase.from('perfiles').select('rol').eq('id', data.user.id).single<{ rol: Rol }>();
-  if (!perfil) {
+  const { data: usuario } = await supabase.from('usuarios').select('rol, activo').eq('auth_id', data.user.id).maybeSingle<{ rol: Rol; activo: boolean }>();
+  if (!usuario || !usuario.activo) {
     await supabase.auth.signOut();
-    return 'Tu usuario no tiene un perfil asignado. Contactá a un administrador.';
+    return usuario ? 'Tu usuario está dado de baja. Contactá a un administrador.' : 'Tu cuenta no está vinculada a ningún usuario del CRM. Contactá a un administrador.';
   }
-  redirect(rutaInicio(perfil.rol));
+  redirect(rutaInicio(usuario.rol));
 }
 
 export async function cerrarSesion() {

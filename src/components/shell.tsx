@@ -5,14 +5,15 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState, useTransition } from 'react';
 import { cerrarSesion } from '@/app/acciones/auth';
 import { cambiarEstado } from '@/app/acciones/equipo';
+import type { EstadoUsuario, Usuario } from '@/lib/tipos';
 import { iniciales } from '@/lib/util';
-import type { EstadoUsuario, Perfil } from '@/lib/tipos';
 import { Iconos } from './iconos';
 import { ETIQUETA_ROL, itemsPorRol } from './navegacion';
+import { Avatar } from './ui';
 
-export function Shell({ perfil, sucursal, children }: { perfil: Perfil; sucursal: string | null; children: React.ReactNode }) {
+export function Shell({ usuario, sucursal, children }: { usuario: Usuario; sucursal: string | null; children: React.ReactNode }) {
   const pathname = usePathname();
-  const items = itemsPorRol(perfil.rol);
+  const items = itemsPorRol(usuario.rol);
   const actual = items.find((i) => pathname.startsWith(i.href));
   const esBandeja = pathname.startsWith('/bandeja');
 
@@ -28,7 +29,7 @@ export function Shell({ perfil, sucursal, children }: { perfil: Perfil; sucursal
           ))}
         </div>
         <div className="rail-spacer" />
-        <div className="rail-avatar" title={perfil.nombre}>{iniciales(perfil.nombre)}</div>
+        <div className="rail-avatar" title={usuario.nombre}>{iniciales(usuario.nombre)}</div>
         <form action={cerrarSesion}>
           <button className="rail-logout" title="Cerrar sesión" style={{ border: 'none', background: 'none' }}>{Iconos.salir}</button>
         </form>
@@ -38,16 +39,16 @@ export function Shell({ perfil, sucursal, children }: { perfil: Perfil; sucursal
         <header className="topbar">
           <div className="topbar-left">
             <h1>
-              {actual?.titulo ?? 'Akar CRM'} <span className="role-badge">{ETIQUETA_ROL[perfil.rol]}</span>
+              {actual?.titulo ?? 'Akar CRM'} <span className="role-badge">{ETIQUETA_ROL[usuario.rol]}</span>
             </h1>
           </div>
           <div className="topbar-right">
             {sucursal && (
-              <span className="filter-chip" title="Tu sucursal">Sucursal {sucursal}</span>
+              <span className="filter-chip" title="Tu sucursal">{sucursal}</span>
             )}
             {esBandeja && <Suspense><BuscadorLeads /></Suspense>}
-            {perfil.rol === 'vendedor' && <SelectorEstado inicial={perfil.estado} />}
-            <div className="avatar" title={perfil.nombre}>{iniciales(perfil.nombre)}</div>
+            {usuario.rol === 'vendedor' && <SelectorEstado inicial={usuario.estado} />}
+            <Avatar nombre={usuario.nombre} foto={usuario.foto_url} />
           </div>
         </header>
         <main className="page-body">{children}</main>
@@ -83,13 +84,17 @@ function BuscadorLeads() {
 function SelectorEstado({ inicial }: { inicial: EstadoUsuario }) {
   const [estado, setEstado] = useState(inicial);
   const [, iniciar] = useTransition();
-  const opciones: EstadoUsuario[] = ['Activo', 'Ocupado', 'Desconectado'];
+  const opciones: { valor: EstadoUsuario; etiqueta: string }[] = [
+    { valor: 'activo', etiqueta: 'Activo' },
+    { valor: 'ocupado', etiqueta: 'Ocupado' },
+    { valor: 'desconectado', etiqueta: 'Desconectado' },
+  ];
   return (
     <div className="status-toggle" role="radiogroup" aria-label="Estado">
       {opciones.map((o) => (
-        <button key={o} role="radio" aria-checked={estado === o} className={`status-opt${estado === o ? ' active' : ''}`}
-          onClick={() => { setEstado(o); iniciar(() => cambiarEstado(o)); }}>
-          {o}
+        <button key={o.valor} role="radio" aria-checked={estado === o.valor} className={`status-opt${estado === o.valor ? ' active' : ''}`}
+          onClick={() => { setEstado(o.valor); iniciar(() => cambiarEstado(o.valor)); }}>
+          {o.etiqueta}
         </button>
       ))}
     </div>

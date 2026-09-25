@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { Vacio } from './ui';
 
 export interface FilaRanking {
-  id: string;
+  id: number;
   nombre: string;
   sucursal: string;
   ventas: number;

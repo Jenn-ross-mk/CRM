@@ -1,24 +1,23 @@
 import 'server-only';
 import { crearClienteServidor } from './supabase/server';
-import { TRAMOS_SEGUIMIENTO, ETAPA_FINAL } from './constantes';
+import { TRAMOS_SEGUIMIENTO, ordenEtapa, ordenFinal } from './constantes';
 import { diasDesde } from './fechas';
-import type { Alerta, Lead, Mensaje, Nota, Perfil, Sucursal, TestDrive, Venta } from './tipos';
-
-export type LeadBandeja = Lead & { ultimo_texto: string | null; ultima_direccion: 'in' | 'out' | null };
+import type { Alerta, EtapaPipeline, Etiqueta, Horario, LeadBandeja, Mensaje, Nota, Sucursal, Turno, Usuario, Venta } from './tipos';
 
 export interface DetalleLead {
-  lead: Lead;
+  lead: LeadBandeja;
   mensajes: Mensaje[];
   notas: Nota[];
   alertas: Alerta[];
-  testDrives: TestDrive[];
+  turnos: Turno[];
+  etiquetas: Etiqueta[];
   venta: Venta | null;
 }
 
-export async function listarPerfiles(): Promise<Perfil[]> {
+export async function listarUsuarios(): Promise<Usuario[]> {
   const supabase = await crearClienteServidor();
-  const { data } = await supabase.from('perfiles').select('*').order('nombre');
-  return (data ?? []) as Perfil[];
+  const { data } = await supabase.from('usuarios').select('*').order('nombre');
+  return (data ?? []) as Usuario[];
 }
 
 export async function listarSucursales(): Promise<Sucursal[]> {
@@ -33,15 +32,27 @@ export async function listarModelos(): Promise<string[]> {
   return (data ?? []).map((m) => m.nombre as string);
 }
 
-/** Leads visibles para el usuario (RLS), con filtros opcionales. */
-export async function listarBandeja(filtros: { vendedorId?: string | null; sinAsignar?: boolean; q?: string }): Promise<LeadBandeja[]> {
+export async function listarEtapas(): Promise<EtapaPipeline[]> {
   const supabase = await crearClienteServidor();
-  let query = supabase.from('bandeja').select('*').order('ultimo_mensaje_at', { ascending: false }).limit(500);
+  const { data } = await supabase.from('etapas_pipeline').select('*').order('sector').order('orden');
+  return (data ?? []) as EtapaPipeline[];
+}
+
+export async function listarEtiquetas(): Promise<Etiqueta[]> {
+  const supabase = await crearClienteServidor();
+  const { data } = await supabase.from('etiquetas').select('*').order('nombre');
+  return (data ?? []) as Etiqueta[];
+}
+
+/** Leads visibles para el usuario (RLS), con filtros opcionales. */
+export async function listarBandeja(filtros: { vendedorId?: number | null; sinAsignar?: boolean; q?: string }): Promise<LeadBandeja[]> {
+  const supabase = await crearClienteServidor();
+  let query = supabase.from('bandeja').select('*').order('ultimo_mensaje_en', { ascending: false }).limit(500);
   if (filtros.sinAsignar) query = query.is('vendedor_id', null);
   else if (filtros.vendedorId) query = query.eq('vendedor_id', filtros.vendedorId);
   if (filtros.q) {
     const q = filtros.q.replace(/[%,()]/g, ' ').trim();
-    if (q) query = query.or(`nombre.ilike.%${q}%,telefono.ilike.%${q}%`);
+    if (q) query = query.or(`nombre.ilike.%${q}%,telefono.ilike.%${q}%,canal_id.ilike.%${q}%`);
   }
   const { data } = await query;
   return (data ?? []) as LeadBandeja[];
@@ -49,28 +60,30 @@ export async function listarBandeja(filtros: { vendedorId?: string | null; sinAs
 
 export async function detalleLead(id: number): Promise<DetalleLead | null> {
   const supabase = await crearClienteServidor();
-  const { data: lead } = await supabase.from('leads').select('*').eq('id', id).maybeSingle<Lead>();
+  const { data: lead } = await supabase.from('bandeja').select('*').eq('id', id).maybeSingle<LeadBandeja>();
   if (!lead) return null;
-  const [mensajes, notas, alertas, testDrives, venta] = await Promise.all([
-    supabase.from('mensajes').select('*').eq('lead_id', id).order('created_at').order('id'),
-    supabase.from('notas').select('*').eq('lead_id', id).order('created_at'),
-    supabase.from('alertas').select('*').eq('lead_id', id).order('fecha'),
-    supabase.from('test_drives').select('*').eq('lead_id', id).in('estado', ['pendiente', 'aprobado']).order('fecha'),
-    supabase.from('ventas').select('*').eq('lead_id', id).maybeSingle(),
+  const [mensajes, notas, alertas, turnos, etiquetas, venta] = await Promise.all([
+    supabase.from('mensajes').select('*').eq('lead_id', id).order('creado_en').order('id'),
+    supabase.from('notas').select('*').eq('lead_id', id).order('creado_en'),
+    supabase.from('alertas').select('*').eq('lead_id', id).order('fecha_hora'),
+    supabase.from('turnos').select('*').eq('lead_id', id).in('estado', ['pendiente', 'aprobado']).order('fecha_hora'),
+    supabase.from('lead_etiquetas').select('etiquetas(*)').eq('lead_id', id).order('creado_en'),
+    supabase.from('ventas').select('*').eq('lead_id', id).limit(1).maybeSingle(),
   ]);
   return {
     lead,
     mensajes: (mensajes.data ?? []) as Mensaje[],
     notas: (notas.data ?? []) as Nota[],
     alertas: (alertas.data ?? []) as Alerta[],
-    testDrives: (testDrives.data ?? []) as TestDrive[],
+    turnos: (turnos.data ?? []) as Turno[],
+    etiquetas: ((etiquetas.data ?? []) as unknown as { etiquetas: Etiqueta | null }[]).map((f) => f.etiquetas).filter((e): e is Etiqueta => !!e),
     venta: (venta.data ?? null) as Venta | null,
   };
 }
 
-export async function listarAlertasPropias(ownerId: string): Promise<Alerta[]> {
+export async function listarAlertasPropias(usuarioId: number): Promise<Alerta[]> {
   const supabase = await crearClienteServidor();
-  const { data } = await supabase.from('alertas').select('*').eq('owner_id', ownerId).order('fecha');
+  const { data } = await supabase.from('alertas').select('*').eq('usuario_id', usuarioId).order('fecha_hora');
   return (data ?? []) as Alerta[];
 }
 
@@ -83,13 +96,20 @@ export async function listarVentas(filtros: { desde?: string; hasta?: string } =
   return (data ?? []) as Venta[];
 }
 
-export async function listarTestDrives(filtros: { desde?: string; hasta?: string } = {}): Promise<TestDrive[]> {
+/** Turnos de test drive desde una fecha (instante ISO). */
+export async function listarTurnos(filtros: { desde?: string } = {}): Promise<Turno[]> {
   const supabase = await crearClienteServidor();
-  let query = supabase.from('test_drives').select('*').order('fecha').order('hora');
-  if (filtros.desde) query = query.gte('fecha', filtros.desde);
-  if (filtros.hasta) query = query.lt('fecha', filtros.hasta);
+  let query = supabase.from('turnos').select('*').eq('tipo', 'test_drive').order('fecha_hora');
+  if (filtros.desde) query = query.gte('fecha_hora', filtros.desde);
   const { data } = await query;
-  return (data ?? []) as TestDrive[];
+  return (data ?? []) as Turno[];
+}
+
+/** Horarios de los vendedores desde una fecha 'YYYY-MM-DD'. */
+export async function listarHorarios(desde: string): Promise<Horario[]> {
+  const supabase = await crearClienteServidor();
+  const { data } = await supabase.from('horarios_vendedor').select('*').gte('fecha', desde).order('fecha').order('hora_desde');
+  return (data ?? []) as Horario[];
 }
 
 /** Rango [desde, hasta) de un mes 'YYYY-MM'. */
@@ -100,25 +120,27 @@ export function rangoMes(clave: string): { desde: string; hasta: string } {
 }
 
 export interface PendienteSeguimiento {
-  lead: Pick<Lead, 'id' | 'nombre' | 'vendedor_id' | 'sector' | 'ultimo_mensaje_at'>;
+  lead: Pick<LeadBandeja, 'id' | 'nombre' | 'vendedor_id' | 'sector' | 'ultimo_mensaje_en'>;
   tramo: number;
   dias: number;
 }
 
-/** Agrupa los leads sin contacto (1 semana a 18 meses), excluyendo los ya ganados/adjudicados. */
-export async function calcularSeguimiento(filtros: { vendedorId?: string; sucursalId?: number | null }) {
+/** Agrupa los leads asignados sin contacto (1 semana a 18 meses), excluyendo los ya ganados/adjudicados. */
+export async function calcularSeguimiento(filtros: { vendedorId?: number; sucursales?: number[] | null }) {
   const supabase = await crearClienteServidor();
   const limite = new Date(Date.now() - 7 * 86400000).toISOString();
-  let query = supabase.from('leads').select('id, nombre, vendedor_id, sector, ultimo_mensaje_at, sucursal_id')
-    .lt('ultimo_mensaje_at', limite).lt('etapa', ETAPA_FINAL).order('ultimo_mensaje_at');
+  let query = supabase.from('bandeja').select('id, nombre, vendedor_id, sector, etapa_id, ultimo_mensaje_en, sucursal_id')
+    .not('vendedor_id', 'is', null).lt('ultimo_mensaje_en', limite).not('estado', 'in', '(no_contactar,cerrado)').order('ultimo_mensaje_en');
   if (filtros.vendedorId) query = query.eq('vendedor_id', filtros.vendedorId);
-  if (filtros.sucursalId) query = query.eq('sucursal_id', filtros.sucursalId);
-  const { data } = await query;
+  if (filtros.sucursales) query = query.in('sucursal_id', filtros.sucursales);
+  const [{ data }, etapas] = await Promise.all([query, listarEtapas()]);
 
   const conteos = TRAMOS_SEGUIMIENTO.map(() => 0);
   const pendientes: PendienteSeguimiento[] = [];
-  for (const lead of data ?? []) {
-    const dias = diasDesde(lead.ultimo_mensaje_at);
+  for (const lead of (data ?? []) as (PendienteSeguimiento['lead'] & { etapa_id: number | null })[]) {
+    const final = ordenFinal(etapas, lead.sector);
+    if (final && ordenEtapa(etapas, lead.etapa_id) >= final) continue;
+    const dias = diasDesde(lead.ultimo_mensaje_en);
     let tramo = -1;
     TRAMOS_SEGUIMIENTO.forEach((t, i) => { if (dias >= t.dias) tramo = i; });
     if (tramo < 0) continue;

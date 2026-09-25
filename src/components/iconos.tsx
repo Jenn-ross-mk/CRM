@@ -35,6 +35,12 @@ export const Iconos = {
   salir: (
     <svg {...base} width="16" height="16"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
   ),
+  horario: (
+    <svg {...base}><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /><circle cx="12" cy="15" r="3" /><path d="M12 13.8V15l.9.7" /></svg>
+  ),
+  bot: (
+    <svg {...base}><rect x="4" y="8" width="16" height="11" rx="3" /><path d="M12 4v4M9 13h.01M15 13h.01" /><path d="M2 13v2M22 13v2" /></svg>
+  ),
   campana: (
     <svg {...base}><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>
   ),

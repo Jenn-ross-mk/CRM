@@ -4,12 +4,12 @@ import type { Comunicado, Entrega, Gira } from '@/lib/tipos';
 import { PanelGeneral } from './panel';
 
 export default async function PanelPage() {
-  await exigirRol(['administrador', 'supervisor']);
+  await exigirRol(['admin', 'supervisor']);
   const supabase = await crearClienteServidor();
   const [c, g, e] = await Promise.all([
-    supabase.from('comunicados').select('*').order('created_at', { ascending: false }),
-    supabase.from('giras').select('*').order('created_at'),
-    supabase.from('entregas').select('*').order('created_at'),
+    supabase.from('comunicados').select('*').eq('activo', true).order('creado_en', { ascending: false }),
+    supabase.from('giras_plan_ahorro').select('*').order('fecha_hora'),
+    supabase.from('entregas').select('*').order('fecha'),
   ]);
   return <PanelGeneral comunicados={(c.data ?? []) as Comunicado[]} giras={(g.data ?? []) as Gira[]} entregas={(e.data ?? []) as Entrega[]} />;
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { ETIQUETA_SECTOR, SECTORES_VENTA } from '@/lib/constantes';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 /** Select que guarda su valor en la URL (?param=valor) para que el filtro sea compartible. */
@@ -24,19 +25,19 @@ export function FiltroSelect({ param, valor, opciones, limpiar = [] }: {
   );
 }
 
-/** Toggle de sector (Convencional / Plan de ahorro) guardado en la URL. */
+/** Toggle de sector (Convencional / Plan de ahorro / Usados) guardado en la URL. */
 export function ToggleSector({ valor, param = 'sector' }: { valor: string; param?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   return (
     <div className="rank-toggle">
-      {['Convencional', 'Plan de ahorro'].map((s) => (
+      {SECTORES_VENTA.map((s) => (
         <div key={s} className={`rtog${valor === s ? ' active' : ''}`} onClick={() => {
           const p = new URLSearchParams(params);
           p.set(param, s);
           router.push(`${pathname}?${p.toString()}`, { scroll: false });
-        }}>{s}</div>
+        }}>{ETIQUETA_SECTOR[s]}</div>
       ))}
     </div>
   );

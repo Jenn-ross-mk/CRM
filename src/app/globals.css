@@ -421,6 +421,21 @@
   .loading-bar{position:fixed;top:0;left:0;right:0;height:2px;background:var(--navy-500);z-index:100;animation:carga 1s ease-in-out infinite;transform-origin:left;}
   @keyframes carga{0%{transform:scaleX(0);}50%{transform:scaleX(.6);}100%{transform:scaleX(1);opacity:0;}}
 
+  /* Autor de cada mensaje: avatar (foto o iniciales) del vendedor e ícono del bot. */
+  .msg-row{display:flex;align-items:flex-end;gap:8px;max-width:70%;}
+  .msg-row .msg{max-width:none;}
+  .msg-row-in{align-self:flex-start;}
+  .msg-row-out{align-self:flex-end;flex-direction:row-reverse;}
+  .msg-bot{background:var(--navy-100);color:var(--ink);}
+  .msg-bot .msg-time{color:var(--slate);}
+  .msg-media{font-size:11px;font-weight:700;opacity:.8;margin-bottom:3px;}
+  .avatar-mini{width:26px;height:26px;font-size:9.5px;}
+  .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;}
+  .avatar-bot{background:var(--navy-600);color:var(--white);}
+  .avatar-bot svg{width:15px;height:15px;}
+  .check-inline{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--ink);padding:3px 0;}
+  .horario-dia{font-size:11px;font-weight:800;color:var(--navy-800);text-transform:capitalize;margin:14px 0 4px;}
+
   /* Responsive básico: el diseño es de escritorio; en pantallas chicas se apilan columnas. */
   @media (max-width: 1100px){
     .dash-grid,.td-grid,.seg-grid,.pipe-grid,.admin-grid-3{grid-template-columns:1fr;}

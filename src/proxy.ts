@@ -22,7 +22,7 @@ export async function proxy(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const logueado = Boolean(data?.claims);
   const { pathname } = request.nextUrl;
-  const esPublica = pathname.startsWith('/login') || pathname.startsWith('/restablecer') || pathname.startsWith('/api/webhooks');
+  const esPublica = pathname.startsWith('/login') || pathname.startsWith('/restablecer');
 
   if (!logueado && !esPublica) {
     const url = request.nextUrl.clone();

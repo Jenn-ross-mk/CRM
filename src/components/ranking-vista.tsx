@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { etiquetaSector } from '@/lib/constantes';
 import { fechaLarga } from '@/lib/fechas';
 import type { Venta } from '@/lib/tipos';
 import { plural } from '@/lib/util';
@@ -45,7 +46,7 @@ export function RankingVista({ filas, etiqueta, ventas, rutaVentas }: {
             <div className="detail-block" style={{ padding: 0 }}>
               {susVentas.length ? susVentas.map((v) => (
                 <div key={v.id} className="manage-row">
-                  <div><div className="mr-text">{v.cliente}</div><div className="mr-sub">{v.vehiculo} · {fechaLarga(v.fecha)} · {v.sector}</div></div>
+                  <div><div className="mr-text">{v.cliente_nombre}</div><div className="mr-sub">{v.vehiculo} · {fechaLarga(v.fecha)} · {etiquetaSector(v.sector)}</div></div>
                 </div>
               )) : <Vacio style={{ padding: '12px 0' }}>Sin ventas en el período seleccionado.</Vacio>}
             </div>

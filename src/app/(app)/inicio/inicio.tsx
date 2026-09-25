@@ -8,7 +8,7 @@ import { Iconos } from '@/components/iconos';
 import type { FilaRanking } from '@/components/ranking';
 import { Toast, useAccion, Vacio } from '@/components/ui';
 import { HORAS_ALERTA } from '@/lib/constantes';
-import { fechaCorta, fechaLocal, fechaTexto, horaLocal, tituloDia } from '@/lib/fechas';
+import { fechaCorta, fechaLarga, fechaLocal, fechaTexto, fechaTurno, horaLocal, tituloDia } from '@/lib/fechas';
 import type { Alerta, Comunicado, Entrega, Gira } from '@/lib/tipos';
 
 interface Props {
@@ -67,8 +67,8 @@ function Resumen({ mes, comunicados, giras, entregas, rankingConv, rankingPlan }
           {giras.length ? giras.map((g) => (
             <div key={g.id} className="td-row">
               <span className="td-model">{g.destino}</span>
-              <span className="td-slot">{g.fecha}</span>
-              <span className={`td-status ${g.unidades === 'Por confirmar' ? 'td-libre' : 'td-reservado'}`}>{g.unidades}</span>
+              <span className="td-slot">{fechaTurno(fechaLocal(g.fecha_hora))} {horaLocal(g.fecha_hora)}</span>
+              <span className={`td-status ${g.unidades ? 'td-reservado' : 'td-libre'}`}>{g.unidades ?? 'Por confirmar'}</span>
             </div>
           )) : <Vacio>No hay giras agendadas.</Vacio>}
         </div>
@@ -84,8 +84,8 @@ function Resumen({ mes, comunicados, giras, entregas, rankingConv, rankingPlan }
           <p className="dcard-sub">Novedades del área</p>
           {comunicados.length ? comunicados.map((c) => (
             <div key={c.id} className="announce-item">
-              <span className="announce-tag">{c.tag}</span>
-              <div><div className="announce-text">{c.texto}</div><div className="announce-date">{c.detalle}</div></div>
+              <span className="announce-tag">{c.categoria ?? 'INFO'}</span>
+              <div><div className="announce-text">{c.texto}</div><div className="announce-date">{c.cuando ?? ''}</div></div>
             </div>
           )) : <Vacio>Sin comunicados.</Vacio>}
         </div>
@@ -96,7 +96,7 @@ function Resumen({ mes, comunicados, giras, entregas, rankingConv, rankingPlan }
               <thead><tr><th>Vehículo</th><th>Cliente</th><th>Fecha</th></tr></thead>
               <tbody>
                 {entregas.map((e) => (
-                  <tr key={e.id}><td className="deliv-veh">{e.vehiculo}</td><td>{e.cliente}</td><td><span className="deliv-day">{e.hecha ? 'Entregado' : e.dia}</span></td></tr>
+                  <tr key={e.id}><td className="deliv-veh">{e.vehiculo}</td><td>{e.cliente_nombre}</td><td><span className="deliv-day">{e.entregada ? 'Entregado' : fechaLarga(e.fecha)}</span></td></tr>
                 ))}
               </tbody>
             </table>
@@ -120,7 +120,7 @@ function MisAlertas({ alertas, leads }: Props) {
   const nombreLead = useMemo(() => new Map(leads.map((l) => [l.id, l.nombre])), [leads]);
   const porDia = useMemo(() => {
     const m = new Map<string, Alerta[]>();
-    alertas.forEach((a) => { const d = fechaLocal(a.fecha); m.set(d, [...(m.get(d) ?? []), a]); });
+    alertas.forEach((a) => { const d = fechaLocal(a.fecha_hora); m.set(d, [...(m.get(d) ?? []), a]); });
     return m;
   }, [alertas]);
   const delDia = porDia.get(dia) ?? [];
@@ -143,7 +143,7 @@ function MisAlertas({ alertas, leads }: Props) {
             {delDia.length ? delDia.map((a) => (
               <div key={a.id} className="reminder-item">
                 <div className="agenda-icon reminder-icon">{Iconos.campana}</div>
-                <div><div className="agenda-title">{a.mensaje}</div><div className="agenda-sub">{horaLocal(a.fecha)} · {etiquetaLead(a)}</div></div>
+                <div><div className="agenda-title">{a.mensaje}</div><div className="agenda-sub">{horaLocal(a.fecha_hora)} · {etiquetaLead(a)}</div></div>
                 {botonBorrar(a)}
               </div>
             )) : <div className="empty-slots">Sin alertas este día.</div>}
@@ -182,7 +182,7 @@ function MisAlertas({ alertas, leads }: Props) {
         {alertas.length ? alertas.map((a) => (
           <div key={a.id} className="alert-list-row">
             <div className="agenda-icon reminder-icon">{Iconos.campana}</div>
-            <div><div className="alert-msg">{a.mensaje}</div><div className="alert-when">{fechaCorta(a.fecha)} · {horaLocal(a.fecha)} · {etiquetaLead(a)}</div></div>
+            <div><div className="alert-msg">{a.mensaje}</div><div className="alert-when">{fechaCorta(a.fecha_hora)} · {horaLocal(a.fecha_hora)} · {etiquetaLead(a)}</div></div>
             {botonBorrar(a)}
           </div>
         )) : <Vacio>No tenés alertas creadas.</Vacio>}

@@ -3,10 +3,10 @@ import { crearClienteServidor } from './supabase/server';
 import { obtenerSesion } from './sesion';
 import type { Resultado } from './tipos';
 
-/** Contexto común de las Server Actions: cliente con la sesión del usuario + su perfil. */
+/** Contexto común de las Server Actions: cliente con la sesión del usuario + su ficha en `usuarios`. */
 export async function contexto() {
-  const [supabase, { perfil }] = await Promise.all([crearClienteServidor(), obtenerSesion()]);
-  return { supabase, perfil, esGestion: perfil.rol !== 'vendedor', esAdmin: perfil.rol === 'administrador' };
+  const [supabase, { usuario, misSucursales }] = await Promise.all([crearClienteServidor(), obtenerSesion()]);
+  return { supabase, usuario, misSucursales, esGestion: usuario.rol !== 'vendedor', esAdmin: usuario.rol === 'admin' };
 }
 
 export const ok = (mensaje?: string): Resultado => ({ ok: true, mensaje });
