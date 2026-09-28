@@ -111,6 +111,35 @@ export async function actualizarDatosLead(leadId: number, fd: FormData): Promise
   return ok();
 }
 
+const opcion = (v: string, validos: string[]) => (validos.includes(v) ? v : null);
+const siNo = (v: string) => (v === 'si' ? true : v === 'no' ? false : null);
+
+/** Datos del perfil del cliente. Todos son opcionales: lo que queda vacío se guarda vacío. */
+export async function actualizarPerfilCliente(leadId: number, fd: FormData): Promise<Resultado> {
+  const { supabase } = await contexto();
+  const email = texto(fd, 'email');
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return error('El email no parece válido.');
+  const { error: e } = await supabase.from('leads').update({
+    nombre_cliente: texto(fd, 'nombre_cliente') || null,
+    email: email || null,
+    localidad: texto(fd, 'localidad') || null,
+    vehiculo_interes: texto(fd, 'vehiculo_interes') || null,
+    tipo: opcion(texto(fd, 'tipo'), ['0km', 'usado', 'promocion']),
+    forma_pago: formaPago(texto(fd, 'forma_pago')),
+    monto_capital: texto(fd, 'monto_capital') || null,
+    entrega_vehiculo: siNo(texto(fd, 'entrega_vehiculo')),
+    usado_descripcion: texto(fd, 'usado_descripcion') || null,
+    uso: opcion(texto(fd, 'uso'), ['familiar', 'laboral', 'comercial']),
+    urgencia: texto(fd, 'urgencia') || null,
+    clasificacion: opcion(texto(fd, 'clasificacion'), ['frio', 'tibio', 'caliente']),
+    prioridad: prioridad(texto(fd, 'prioridad')),
+    preferencias: texto(fd, 'preferencias') || null,
+  }).eq('id', leadId);
+  if (e) return error(e);
+  refresh();
+  return ok('Datos guardados.');
+}
+
 /**
  * Cambia la etapa del pipeline (orden 1..N del sector del lead). Al llegar a la última etapa se
  * registra la venta automáticamente; si se desmarca, se elimina la venta generada desde el lead.

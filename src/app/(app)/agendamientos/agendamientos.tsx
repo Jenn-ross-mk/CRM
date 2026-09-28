@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import { crearAlerta, eliminarAlerta, marcarAlertaHecha } from '@/app/acciones/alertas';
-import { agendarContacto, cerrarAgenda, solicitarTurno } from '@/app/acciones/test-drives';
+import { agendarContacto, solicitarTurno } from '@/app/acciones/test-drives';
+import { AccionesAgenda } from '@/components/acciones-agenda';
 import { Calendario } from '@/components/calendario';
 import { Toast, useAccion, Vacio } from '@/components/ui';
 import { ETIQUETA_TIPO_TURNO, HORAS_TURNO } from '@/lib/constantes';
 import { fechaLocal, fechaTexto, fechaTurno, horaLocal, tituloDia } from '@/lib/fechas';
-import type { Alerta, Resultado, Sucursal, TipoTurno, Turno, Usuario } from '@/lib/tipos';
+import type { Alerta, Sucursal, TipoTurno, Turno, Usuario } from '@/lib/tipos';
 
 type Lead = { id: number; nombre: string; telefono: string | null };
 type Tipo = TipoTurno | 'nota';
@@ -42,6 +43,7 @@ function estadoTurno(t: Turno): Item['estado'] {
   }
   return t.estado === 'hecho' ? { clase: 'status-hecho', texto: 'Realizada' } : { clase: 'status-aprobado', texto: 'Agendada' };
 }
+const vencido = (t: Turno, hoy: string) => (t.estado === 'pendiente' || t.estado === 'aprobado') && fechaLocal(t.fecha_hora) < hoy;
 
 export function Agendamientos({ turnos, alertas, sucursales, modelos, leads, yo }: {
   turnos: Turno[];
@@ -86,9 +88,23 @@ export function Agendamientos({ turnos, alertas, sucursales, modelos, leads, yo 
   const proximos = items.filter((i) => fechaLocal(i.fechaHora) > hoy);
   const proximosPorDia = proximos.reduce<Map<string, Item[]>>((m, i) => m.set(fechaLocal(i.fechaHora), [...(m.get(fechaLocal(i.fechaHora)) ?? []), i]), new Map());
   const esHoy = dia === hoy;
+  // Agendamientos cuya fecha ya pasó y siguen abiertos: hay que marcarlos realizados o reagendarlos (si no, el cliente queda en Pendientes).
+  const paraReagendar = items.filter((i) => i.turno && vencido(i.turno, hoy));
 
   return (
     <div className="dash">
+      {paraReagendar.length > 0 && (
+        <div className="dcard alertas-hoy" style={{ marginBottom: 18 }}>
+          <h3><span className="punto-rojo" aria-hidden="true" />Para reagendar · {paraReagendar.length}</h3>
+          <p className="dcard-sub">Ya pasó la fecha y no se marcaron realizados. Mientras no se reagenden, el cliente queda en Pendientes del Panel general.</p>
+          {paraReagendar.map((i) => (
+            <div key={i.clave} className="agenda-grupo">
+              <span className="agenda-grupo-dia" style={{ cursor: 'default' }}>{fechaTurno(fechaLocal(i.fechaHora))}</span>
+              <div style={{ flex: 1, minWidth: 0 }}><Renglon item={i} hoy={hoy} /></div>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="td-grid">
         <div className="dcard">
           <Calendario mes={mes} seleccionado={dia} conEventos={new Set(items.map((i) => fechaLocal(i.fechaHora)))} onSeleccionar={setDia} onCambiarMes={setMes} />
@@ -145,10 +161,8 @@ export function Agendamientos({ turnos, alertas, sucursales, modelos, leads, yo 
 function Renglon({ item, hoy }: { item: Item; hoy: string }) {
   const accion = useAccion();
   const { turno, nota, alertaPendiente } = item;
-  const esContacto = turno && turno.tipo !== 'test_drive' && turno.estado === 'pendiente';
+  const vigente = turno && (turno.estado === 'pendiente' || turno.estado === 'aprobado');
   const esDeHoy = fechaLocal(item.fechaHora) === hoy;
-  // "Listo": la llamada o visita queda realizada; el test drive o la nota, como alerta resuelta.
-  const listo = (): Promise<Resultado> => (esContacto ? cerrarAgenda(turno.id, 'hecho') : marcarAlertaHecha(alertaPendiente!.id));
 
   return (
     <div className={`agenda-renglon tipo-borde-${item.tipo}`}>
@@ -156,16 +170,14 @@ function Renglon({ item, hoy }: { item: Item; hoy: string }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="slot-veh"><span className={`tipo-agenda tipo-${item.tipo}`}>{ETIQUETA[item.tipo]}</span>{item.titulo}</div>
         {item.detalle && <div className="slot-cli">{item.detalle}</div>}
-        {(esContacto || nota) && !esDeHoy && (
-          <div style={{ display: 'flex', gap: 12, marginTop: 3 }}>
-            {esContacto && <button className="btn-link" style={{ fontSize: 10.5, color: 'var(--slate)' }} disabled={accion.pendiente} onClick={() => accion.ejecutar(() => cerrarAgenda(turno.id, 'rechazado'))}>Cancelar</button>}
-            {nota && <button className="btn-link" style={{ fontSize: 10.5, color: 'var(--slate)' }} disabled={accion.pendiente} onClick={() => accion.ejecutar(() => eliminarAlerta(nota.id))}>Borrar</button>}
-          </div>
+        {vigente && <AccionesAgenda turno={turno} compacto />}
+        {nota && !esDeHoy && (
+          <button className="btn-link" style={{ fontSize: 10.5, color: 'var(--slate)', marginTop: 3 }} disabled={accion.pendiente} onClick={() => accion.ejecutar(() => eliminarAlerta(nota.id))}>Borrar</button>
         )}
         <Toast resultado={accion.resultado?.ok ? null : accion.resultado} />
       </div>
-      {esDeHoy && alertaPendiente
-        ? <button className="mini-btn mini-btn-approve" disabled={accion.pendiente} onClick={() => accion.ejecutar(listo)}>Listo</button>
+      {nota && esDeHoy && alertaPendiente
+        ? <button className="mini-btn mini-btn-approve" disabled={accion.pendiente} onClick={() => accion.ejecutar(() => marcarAlertaHecha(alertaPendiente.id))}>Listo</button>
         : item.estado && <span className={`status-pill ${item.estado.clase}`}>{item.estado.texto}</span>}
     </div>
   );

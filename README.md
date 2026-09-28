@@ -21,6 +21,9 @@ Los leads se ordenan en cuatro bloques. El administrador ve todos, el supervisor
 - **Cerrar chat**: desde la conversación o desde el desplegable de cada lead del panel. El motivo es obligatorio y la base lo vuelve a controlar. El chat deja de verse en la bandeja y en Mensajes; el administrador o el supervisor lo pueden reabrir.
 - **Reapertura automática**: si el cliente de un chat cerrado vuelve a escribir, la base lo reabre sola, con el mismo vendedor (o para asignación manual si ese vendedor está dado de baja) y con toda la conversación anterior. n8n tiene que guardar el mensaje en el lead que ya existe para ese contacto, sin crear uno nuevo.
 - **Agendamientos** (antes *Test drive*): un calendario con todo lo del vendedor. Se agenda una *nota libre* (qué hay que hacer ese día), un test drive, una llamada o una visita. El test drive necesita aprobación; lo demás no. La vista del día muestra todo junto, ordenado por hora, y abajo están los próximos días. Reemplaza a *Mis alertas* del Inicio. Llamadas, visitas y test drives también se agendan desde la pestaña *Recordatorios* del chat.
+- **Clientes**: listado de todos los clientes visibles (buscador y filtro por bloque del Panel general). Al tocar uno se abre su **perfil**: dónde está hoy (bloque, motivo y etapa), datos del cliente (modelo de interés, 0 km o usado, uso, para cuándo, preferencias, forma de pago, monto, usado que entrega, temperatura, prioridad; todos opcionales), primer mensaje, agendamientos, notas e historial. También se abre con "Ver perfil" desde el Panel general y desde el chat.
+- **Reagendar**: desde el perfil, Agendamientos o el chat. El motivo es obligatorio: venta de su usado, falta de dinero para la entrega, financiación no conveniente, análisis de la operación, cambio de año o siniestro. Queda registrado en el historial. Un test drive reagendado vuelve a quedar pendiente de aprobación.
+- **Vencido sin reagendar**: si pasa el día de un agendamiento y no se marcó realizado ni se reagendó, el cliente pasa a *Pendientes* con la etiqueta "Sin reagendar".
 - **Alertas de agendamientos**: cada agendamiento crea una alerta para ese día (el test drive, cuando se aprueba). Ese día aparece un aviso al entrar al CRM y un ícono rojo en *Agendamientos* hasta marcarlas como resueltas. Si se cancela o se rechaza, la alerta se borra sola.
 - Comunicados y giras (el panel anterior) pasaron a **Comunicados**. La sección *Entregas de la semana* se quitó.
 
@@ -62,9 +65,11 @@ supabase/migrations/20260925000100_parte6_crm.sql     Parte 6: vínculo con Auth
 supabase/parte6/00..08_*.sql                           La Parte 6 en bloques chicos, para pegar en el SQL Editor
 supabase/migrations/20260928000000_parte7_panel.sql    Parte 7: Panel general, cierre de leads, llamadas y visitas
 supabase/parte7/01..06_*.sql                           La Parte 7 en bloques, para pegar en el SQL Editor
+supabase/migrations/20260929000000_parte8_clientes.sql Parte 8: perfil del cliente y reagendamientos con motivo
+supabase/parte8/01..03_*.sql                           La Parte 8 en bloques, para pegar en el SQL Editor
 ```
 
-En la **base de prueba** hay que correr los bloques de `supabase/parte6/` (si todavía no se corrieron) y después los de `supabase/parte7/`, en orden y de a uno (Supabase → SQL Editor → New query → Run). Cada archivo explica qué hace y qué resultado esperar. El Bloque 0 solo lee: sirve para confirmar los valores permitidos antes de cambiar nada.
+En la **base de prueba** hay que correr los bloques de `supabase/parte6/` (si todavía no se corrieron) y después los de `supabase/parte7/` y `supabase/parte8/`, en orden y de a uno (Supabase → SQL Editor → New query → Run). Cada archivo explica qué hace y qué resultado esperar. El Bloque 0 solo lee: sirve para confirmar los valores permitidos antes de cambiar nada.
 
 Para una base **nueva** (por ejemplo, producción): `npx supabase link --project-ref <ref>` y `npx supabase db push`.
 

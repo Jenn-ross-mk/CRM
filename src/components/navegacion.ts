@@ -1,6 +1,6 @@
 import type { Rol } from '@/lib/tipos';
 
-export type IconoNav = 'inicio' | 'mensajes' | 'calendario' | 'reloj' | 'trofeo' | 'embudo' | 'personas' | 'ubicacion' | 'documento' | 'megafono' | 'horario' | 'tablero';
+export type IconoNav = 'inicio' | 'mensajes' | 'calendario' | 'reloj' | 'trofeo' | 'embudo' | 'personas' | 'ubicacion' | 'documento' | 'megafono' | 'horario' | 'tablero' | 'cliente';
 
 export interface ItemNav {
   href: string;
@@ -10,11 +10,13 @@ export interface ItemNav {
 
 // El Panel general es la primera pantalla de todos los roles.
 const PANEL: ItemNav = { href: '/panel', titulo: 'Panel general', icono: 'tablero' };
+const CLIENTES: ItemNav = { href: '/clientes', titulo: 'Clientes', icono: 'cliente' };
 
 const VENDEDOR: ItemNav[] = [
   PANEL,
   { href: '/inicio', titulo: 'Inicio', icono: 'inicio' },
   { href: '/bandeja', titulo: 'Bandeja', icono: 'mensajes' },
+  CLIENTES,
   { href: '/agendamientos', titulo: 'Agendamientos', icono: 'calendario' },
   { href: '/seguimiento', titulo: 'Seguimiento', icono: 'reloj' },
   { href: '/ranking', titulo: 'Ranking', icono: 'trofeo' },
@@ -23,6 +25,7 @@ const VENDEDOR: ItemNav[] = [
 const GESTION: (ItemNav & { soloAdmin?: boolean })[] = [
   PANEL,
   { href: '/gestion/mensajes', titulo: 'Mensajes', icono: 'mensajes' },
+  CLIENTES,
   { href: '/gestion/pipeline', titulo: 'Pipeline', icono: 'embudo' },
   { href: '/gestion/seguimiento', titulo: 'Seguimiento', icono: 'reloj' },
   { href: '/gestion/vendedores', titulo: 'Vendedores', icono: 'personas', soloAdmin: true },

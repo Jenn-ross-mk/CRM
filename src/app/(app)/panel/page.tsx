@@ -1,9 +1,8 @@
-import { ordenEtapa, ordenFinal } from '@/lib/constantes';
 import { cargarPanel, listarSucursales, listarUsuarios } from '@/lib/datos';
 import { fechaLocal } from '@/lib/fechas';
-import { type Agenda, clasificarLead, fechaValida, periodoValido, rangoPeriodo } from '@/lib/panel';
+import { clasificarLeads, fechaValida, periodoValido, rangoPeriodo } from '@/lib/panel';
 import { obtenerSesion } from '@/lib/sesion';
-import { PanelLeads, type ItemPanel } from './panel';
+import { PanelLeads } from './panel';
 
 type Params = { p?: string; d?: string; v?: string };
 
@@ -29,17 +28,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
     listarSucursales(),
   ]);
 
-  const agendasPorLead = new Map<number, Agenda[]>();
-  for (const a of datos.agendas) agendasPorLead.set(a.lead_id!, [...(agendasPorLead.get(a.lead_id!) ?? []), a]);
-  const conVenta = new Set(datos.ventas.map((v) => v.lead_id));
-  const ahora = new Date();
-
-  const items: ItemPanel[] = datos.leads.map((lead) => {
-    const agendas = agendasPorLead.get(lead.id) ?? [];
-    const final = ordenFinal(datos.etapas, lead.sector);
-    const vendido = conVenta.has(lead.id) || (final > 0 && ordenEtapa(datos.etapas, lead.etapa_id) >= final);
-    return { lead, agendas, clasificacion: clasificarLead(lead, agendas, vendido, ahora) };
-  });
+  const items = clasificarLeads(datos.leads, datos.agendas, datos.ventas, datos.etapas);
 
   const vendedores = usuarios.filter((u) => u.rol === 'vendedor' && (usuario.rol === 'admin' || (u.sucursal_id !== null && misSucursales.includes(u.sucursal_id))));
 

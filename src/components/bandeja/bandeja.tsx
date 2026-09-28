@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { enviarMensaje, marcarLeido, reabrirLead } from '@/app/acciones/leads';
@@ -177,6 +178,7 @@ function Conversacion({ detalle, modo, yo, porId, sucursal, onVolver, onInfo, on
         <div className="conv-header-top">
           <button className="movil-volver solo-movil" onClick={onVolver} aria-label="Volver a la lista">‹</button>
           <span className="conv-name">{lead.nombre}</span>
+          <Link href={`/clientes/${lead.id}`} className="btn-link" style={{ fontSize: 11 }}>Ver perfil</Link>
           <button className="movil-info solo-tablet" onClick={onInfo}>Datos</button>
           <span className={`pill ${lead.prioridad === 'alta' ? 'pill-navy' : lead.prioridad === 'media' ? 'pill-charcoal' : 'pill-outline'}`}>{prioridad}</span>
           <span className="pill pill-outline">{etiquetaSector(lead.sector)}</span>

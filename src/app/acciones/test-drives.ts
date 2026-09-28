@@ -79,6 +79,26 @@ export async function agendarContacto(leadId: number, datos: { tipo: string; fec
   return ok(datos.tipo === 'llamada' ? 'Llamada agendada. Se creó la alerta para ese día.' : 'Visita agendada. Se creó la alerta para ese día.');
 }
 
+/** Mueve un agendamiento a otra fecha. El motivo es obligatorio; la base lo valida y lo registra en el historial. */
+export async function reagendarTurno(id: number, datos: { fecha: string; hora: string; motivo: string }): Promise<Resultado> {
+  if (!datos.motivo) return error('Elegí el motivo del reagendamiento.');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.fecha) || !/^\d{2}:\d{2}$/.test(datos.hora)) return error('Elegí la nueva fecha y hora.');
+  const { supabase } = await contexto();
+  const { error: e } = await supabase.rpc('reagendar_turno', { p_turno_id: id, p_fecha_hora: instanteLocal(datos.fecha, datos.hora), p_motivo: datos.motivo });
+  if (e) return error(e);
+  refresh();
+  return ok('Reagendado. La alerta se movió a la nueva fecha.');
+}
+
+/** Marca un agendamiento como realizado (también un test drive ya aprobado, si es del propio vendedor). */
+export async function marcarTurnoRealizado(id: number): Promise<Resultado> {
+  const { supabase } = await contexto();
+  const { error: e } = await supabase.rpc('marcar_turno_realizado', { p_turno_id: id });
+  if (e) return error(e);
+  refresh();
+  return ok();
+}
+
 /** Marca como realizada ('hecho') o cancela ('rechazado') una llamada o visita. */
 export async function cerrarAgenda(id: number, estado: 'hecho' | 'rechazado'): Promise<Resultado> {
   if (estado !== 'hecho' && estado !== 'rechazado') return error('Estado inválido.');

@@ -9,15 +9,11 @@ import { FiltroSelect } from '@/components/filtros';
 import { SlideOver, Toast, useAccion, Vacio } from '@/components/ui';
 import { ETIQUETA_CANAL, ETIQUETA_TIPO_TURNO, MOTIVOS_CIERRE, etiquetaFormaPago, etiquetaMotivoCierre, etiquetaSector } from '@/lib/constantes';
 import { fechaCorta, fechaLarga, fechaLocal, fechaTurno, horaBandeja, horaLocal } from '@/lib/fechas';
-import { PERIODOS, type Agenda, type Clasificacion, type LeadPanel, type Periodo, moverPeriodo, rangoPeriodo, tituloPeriodo } from '@/lib/panel';
+import { PERIODOS, type Agenda, type LeadClasificado, type LeadPanel, type Periodo, moverPeriodo, rangoPeriodo, tituloPeriodo } from '@/lib/panel';
 import type { EtapaPipeline, Rol, Venta } from '@/lib/tipos';
 import { plural } from '@/lib/util';
 
-export interface ItemPanel {
-  lead: LeadPanel;
-  agendas: Agenda[];
-  clasificacion: Clasificacion;
-}
+export type ItemPanel = LeadClasificado;
 
 type Props = {
   items: ItemPanel[];
@@ -45,7 +41,8 @@ function describir({ lead, clasificacion: c }: ItemPanel): { tag: string; clase:
         ? { tag: 'Agendado', clase: 'ptag-agendado', sub: agendaTexto(c.agenda) }
         : { tag: 'Activo', clase: 'ptag-activo', sub: `Último mensaje ${horaBandeja(lead.ultimo_mensaje_en)}` };
     case 'pendiente':
-      if (c.motivo === 'agenda_vencida') return { tag: 'Agenda vencida', clase: 'ptag-pendiente', sub: `${agendaTexto(c.agenda)} · sin mensaje enviado` };
+      if (c.motivo === 'sin_reagendar') return { tag: 'Sin reagendar', clase: 'ptag-pendiente', sub: `${agendaTexto(c.agenda)} · ya pasó: marcalo realizado o reagendalo` };
+      if (c.motivo === 'agenda_vencida') return { tag: 'Agenda de hoy', clase: 'ptag-pendiente', sub: `${agendaTexto(c.agenda)} · todavía sin mensaje` };
       return c.motivo === 'sin_respuesta'
         ? { tag: 'Sin respuesta', clase: 'ptag-pendiente', sub: `Se le escribió y no responde hace ${c.dias} ${plural(c.dias, 'día')}` }
         : { tag: 'Sin contacto', clase: 'ptag-pendiente', sub: `Sin mensajes del cliente hace ${c.dias} ${plural(c.dias, 'día')}` };
@@ -148,7 +145,7 @@ export function PanelLeads(props: Props) {
         </Bloque>
 
         <Bloque clase="pendiente" titulo="Pendientes" total={pendientes.length}
-          ayuda="Agenda de hoy o vencida sin mensaje, o 7 días sin respuesta del cliente">
+          ayuda="Agendamientos vencidos sin reagendar, agenda de hoy sin mensaje, o 7 días sin respuesta del cliente">
           {pendientes.length ? pendientes.map((i) => tarjeta(i, true)) : <Vacio>No hay leads pendientes.</Vacio>}
         </Bloque>
 
@@ -188,8 +185,9 @@ export function PanelLeads(props: Props) {
   );
 }
 
-/** Orden de los pendientes: primero las agendas vencidas, después los que llevan más días sin respuesta. */
-const urgencia = ({ clasificacion: c }: ItemPanel) => (c.bloque !== 'pendiente' ? 0 : c.motivo === 'agenda_vencida' ? 100000 : c.dias);
+/** Orden de los pendientes: primero lo vencido sin reagendar, después la agenda de hoy y al final los que llevan más días sin respuesta. */
+const urgencia = ({ clasificacion: c }: ItemPanel) =>
+  c.bloque !== 'pendiente' ? 0 : c.motivo === 'sin_reagendar' ? 200000 : c.motivo === 'agenda_vencida' ? 100000 : c.dias;
 
 const nombreVendedor = (id: number | null, nombres: Record<number, string>) => (id ? nombres[id] ?? '—' : 'Sin asignar');
 
@@ -291,7 +289,8 @@ function DetalleLead({ item, etapas, nombres, sucursales, yo, abrirCierre, onLis
       )}
 
       <div className="panel-detalle-acciones">
-        <Link className="alert-btn" href={`${esGestion ? '/gestion/mensajes' : '/bandeja'}?lead=${lead.id}`}>Abrir chat</Link>
+        <Link className="alert-btn" href={`/clientes/${lead.id}`}>Ver perfil</Link>
+        <Link className="alert-btn btn-secundario" href={`${esGestion ? '/gestion/mensajes' : '/bandeja'}?lead=${lead.id}`}>Abrir chat</Link>
         {cerrado && esGestion && (
           <button className="alert-btn btn-secundario" disabled={reabrir.pendiente} onClick={() => reabrir.ejecutar(() => reabrirLead(lead.id), (r) => r.ok && onListo())}>
             {reabrir.pendiente ? 'Reabriendo…' : 'Reabrir chat'}

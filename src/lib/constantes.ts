@@ -1,4 +1,4 @@
-import type { Canal, EstadoLead, EstadoTurno, EtapaPipeline, MotivoCierre, Sector, TipoTurno } from './tipos';
+import type { Canal, EstadoLead, EstadoTurno, EtapaPipeline, MotivoCierre, MotivoReagenda, Sector, TipoTurno } from './tipos';
 
 // Los valores guardados en la base van en minúscula y snake_case; estas tablas dan el texto que se muestra.
 export const ETIQUETA_SECTOR: Record<Sector, string> = {
@@ -51,6 +51,34 @@ export const MOTIVOS_CIERRE: { valor: MotivoCierre; etiqueta: string; soloAdmin?
   { valor: 'otros', etiqueta: 'Otros', soloAdmin: true },
 ];
 export const etiquetaMotivoCierre = (m: MotivoCierre | null) => (m ? MOTIVOS_CIERRE.find((x) => x.valor === m)?.etiqueta ?? m : 'Sin motivo');
+
+/** Motivos para reagendar (obligatorio). Si no se reagenda, el agendamiento vencido pasa a Pendientes. */
+export const MOTIVOS_REAGENDA: { valor: MotivoReagenda; etiqueta: string }[] = [
+  { valor: 'venta_usado', etiqueta: 'Venta de su usado' },
+  { valor: 'falta_dinero_entrega', etiqueta: 'Falta de dinero para la entrega' },
+  { valor: 'financiacion_no_conveniente', etiqueta: 'Financiación no conveniente' },
+  { valor: 'analisis_operacion', etiqueta: 'Análisis de la operación' },
+  { valor: 'cambio_anio', etiqueta: 'Cambio de año' },
+  { valor: 'siniestro', etiqueta: 'Siniestro' },
+];
+export const etiquetaMotivoReagenda = (m: MotivoReagenda) => MOTIVOS_REAGENDA.find((x) => x.valor === m)?.etiqueta ?? m;
+
+export const TIPOS_VEHICULO = [
+  { valor: '0km', etiqueta: '0 km' },
+  { valor: 'usado', etiqueta: 'Usado' },
+  { valor: 'promocion', etiqueta: 'Promoción' },
+];
+export const USOS = [
+  { valor: 'familiar', etiqueta: 'Familiar' },
+  { valor: 'laboral', etiqueta: 'Laboral' },
+  { valor: 'comercial', etiqueta: 'Comercial' },
+];
+export const TEMPERATURAS = [
+  { valor: 'frio', etiqueta: 'Frío' },
+  { valor: 'tibio', etiqueta: 'Tibio' },
+  { valor: 'caliente', etiqueta: 'Caliente' },
+];
+export const etiquetaDe = (lista: { valor: string; etiqueta: string }[], v: string | null) => (v ? lista.find((x) => x.valor === v)?.etiqueta ?? v : '—');
 
 export const ETIQUETA_TIPO_TURNO: Record<TipoTurno, string> = {
   test_drive: 'Test drive',

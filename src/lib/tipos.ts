@@ -7,6 +7,7 @@ export type EstadoUsuario = 'activo' | 'ocupado' | 'desconectado';
 export type EstadoLead = 'en_conversacion' | 'en_cola' | 'asignacion_manual' | 'derivado' | 'perdido' | 'recuperar' | 'no_contactar' | 'cerrado';
 export type EstadoTurno = 'pendiente' | 'aprobado' | 'rechazado' | 'hecho';
 export type TipoTurno = 'test_drive' | 'llamada' | 'visita';
+export type MotivoReagenda = 'venta_usado' | 'falta_dinero_entrega' | 'financiacion_no_conveniente' | 'analisis_operacion' | 'cambio_anio' | 'siniestro';
 export type MotivoCierre = 'falta_dinero' | 'credito_rechazado' | 'usado_no_admitido' | 'compro_competencia' | 'otros';
 export type Prioridad = 'alta' | 'media' | 'baja';
 export type AutorTipo = 'cliente' | 'bot' | 'vendedor';
@@ -83,6 +84,11 @@ export interface Lead {
   detalle_cierre: string | null;
   cerrado_en: string | null;
   cerrado_por: number | null;
+  email: string | null;
+  /** Texto libre: color, versión, equipamiento, horarios para contactarlo, etc. */
+  preferencias: string | null;
+  /** El usado que entregaría: marca, modelo, año, kilómetros. */
+  usado_descripcion: string | null;
   creado_en: string;
   actualizado_en: string;
 }
@@ -145,6 +151,26 @@ export interface Turno {
   fecha_hora: string;
   estado: EstadoTurno;
   aprobado_por: number | null;
+}
+
+export interface Reagendamiento {
+  id: number;
+  turno_id: number;
+  lead_id: number | null;
+  motivo: MotivoReagenda;
+  fecha_anterior: string;
+  fecha_nueva: string;
+  usuario_id: number | null;
+  creado_en: string;
+}
+
+export interface EntradaHistorial {
+  id: number;
+  lead_id: number;
+  tipo: string;
+  descripcion: string;
+  usuario_id: number | null;
+  creado_en: string;
 }
 
 export interface CampoExtra {

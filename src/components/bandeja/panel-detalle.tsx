@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { crearAlerta, eliminarAlerta } from '@/app/acciones/alertas';
-import { agendarContacto, cerrarAgenda, solicitarTurno } from '@/app/acciones/test-drives';
+import { agendarContacto, solicitarTurno } from '@/app/acciones/test-drives';
+import { AccionesAgenda } from '../acciones-agenda';
 import { actualizarDatosLead, agregarEtiqueta, agregarNota, cambiarEtapa, quitarEtiqueta, reasignarLead, usarPlantilla } from '@/app/acciones/leads';
 import { ETIQUETA_CANAL, ETIQUETA_TIPO_TURNO, FORMAS_PAGO, HORAS_TURNO, etapasDe, etiquetaFormaPago, ordenEtapa, ordenFinal } from '@/lib/constantes';
 import type { DetalleLead } from '@/lib/datos';
@@ -230,7 +231,6 @@ function TabRecordatorios({ detalle, yo, modelos }: Props) {
   const [fechaAgenda, setFechaAgenda] = useState(fechaLocal());
   const [horaAgenda, setHoraAgenda] = useState('10:00');
   const agenda = useAccion();
-  const marcar = useAccion();
 
   return (
     <div className="detail-pane active">
@@ -242,18 +242,12 @@ function TabRecordatorios({ detalle, yo, modelos }: Props) {
             <div style={{ flex: 1 }}>
               <div className="agenda-title">{ETIQUETA_TIPO_TURNO[t.tipo] ?? t.tipo}{t.tipo === 'test_drive' && t.vehiculo ? ` · ${t.vehiculo}` : ''}</div>
               <div className="agenda-sub">
-                {fechaTurno(fechaLocal(t.fecha_hora))} · {horaLocal(t.fecha_hora)} · {t.tipo !== 'test_drive' ? 'pendiente' : t.estado === 'pendiente' ? 'pendiente de aprobación' : 'aprobado'}
+                {fechaTurno(fechaLocal(t.fecha_hora))} · {horaLocal(t.fecha_hora)} · {t.tipo !== 'test_drive' ? 'agendada' : t.estado === 'pendiente' ? 'pendiente de aprobación' : 'aprobado'}
               </div>
-              {t.tipo !== 'test_drive' && (t.vendedor_id === yo.id || yo.rol !== 'vendedor') && (
-                <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                  <button className="btn-link" style={{ fontSize: 10.5 }} disabled={marcar.pendiente} onClick={() => marcar.ejecutar(() => cerrarAgenda(t.id, 'hecho'))}>Marcar realizada</button>
-                  <button className="btn-link" style={{ fontSize: 10.5, color: 'var(--slate)' }} disabled={marcar.pendiente} onClick={() => marcar.ejecutar(() => cerrarAgenda(t.id, 'rechazado'))}>Cancelar</button>
-                </div>
-              )}
+              {(t.vendedor_id === yo.id || yo.rol !== 'vendedor') && <AccionesAgenda turno={t} compacto />}
             </div>
           </div>
         )) : <Vacio>Nada agendado.</Vacio>}
-        <Toast resultado={marcar.resultado?.ok ? null : marcar.resultado} />
         <button className="tag-add" style={{ width: '100%', textAlign: 'center', marginTop: 6 }} onClick={() => setAgendando(!agendando)}>+ Agendar llamada, visita o test drive</button>
         {agendando && (
           <form style={{ marginTop: 12 }} onSubmit={(e) => {

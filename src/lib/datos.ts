@@ -3,7 +3,7 @@ import { crearClienteServidor } from './supabase/server';
 import { TRAMOS_SEGUIMIENTO, ordenEtapa, ordenFinal } from './constantes';
 import { diasDesde, fechaLocal, fechaMasDias, instanteLocal, msHaceDias } from './fechas';
 import { COLUMNAS_LEAD_PANEL, type Agenda, type LeadPanel } from './panel';
-import type { Alerta, EtapaPipeline, Etiqueta, Horario, LeadBandeja, Mensaje, Nota, Sucursal, Turno, Usuario, Venta } from './tipos';
+import type { Alerta, EntradaHistorial, EtapaPipeline, Etiqueta, Horario, LeadBandeja, Mensaje, Nota, Reagendamiento, Sucursal, Turno, Usuario, Venta } from './tipos';
 
 export interface DetalleLead {
   lead: LeadBandeja;
@@ -226,5 +226,44 @@ export async function cargarPanel(filtros: {
     agendas: (t.data ?? []) as Agenda[],
     ventas: (v.data ?? []) as Venta[],
     etapas,
+  };
+}
+
+// ---------- Perfil del cliente ----------
+
+export interface PerfilCliente {
+  lead: LeadBandeja;
+  primerMensaje: Mensaje | null;
+  notas: Nota[];
+  turnos: Turno[];
+  reagendamientos: Reagendamiento[];
+  historial: EntradaHistorial[];
+  venta: Venta | null;
+  etiquetas: Etiqueta[];
+}
+
+/** Todo lo del perfil de un cliente en paralelo. Si el lead no es visible para el usuario (RLS), devuelve null. */
+export async function perfilCliente(id: number): Promise<PerfilCliente | null> {
+  const supabase = await crearClienteServidor();
+  const [{ data: lead }, primero, notas, turnos, reagendamientos, historial, venta, etiquetas] = await Promise.all([
+    supabase.from('bandeja').select('*').eq('id', id).maybeSingle<LeadBandeja>(),
+    supabase.from('mensajes').select('*').eq('lead_id', id).order('creado_en').order('id').limit(1).maybeSingle(),
+    supabase.from('notas').select('*').eq('lead_id', id).order('creado_en', { ascending: false }),
+    supabase.from('turnos').select('*').eq('lead_id', id).order('fecha_hora', { ascending: false }),
+    supabase.from('reagendamientos').select('*').eq('lead_id', id).order('creado_en', { ascending: false }),
+    supabase.from('lead_historial').select('*').eq('lead_id', id).order('creado_en', { ascending: false }).limit(50),
+    supabase.from('ventas').select('*').eq('lead_id', id).limit(1).maybeSingle(),
+    supabase.from('lead_etiquetas').select('etiquetas(*)').eq('lead_id', id).order('creado_en'),
+  ]);
+  if (!lead) return null;
+  return {
+    lead,
+    primerMensaje: (primero.data ?? null) as Mensaje | null,
+    notas: (notas.data ?? []) as Nota[],
+    turnos: (turnos.data ?? []) as Turno[],
+    reagendamientos: (reagendamientos.data ?? []) as Reagendamiento[],
+    historial: (historial.data ?? []) as EntradaHistorial[],
+    venta: (venta.data ?? null) as Venta | null,
+    etiquetas: ((etiquetas.data ?? []) as unknown as { etiquetas: Etiqueta | null }[]).map((f) => f.etiquetas).filter((e): e is Etiqueta => !!e),
   };
 }

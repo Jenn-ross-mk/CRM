@@ -537,11 +537,58 @@
   .aviso-acciones .alert-btn{padding:9px 16px;text-decoration:none;}
   .aviso-btn-sec{background:var(--white);color:var(--navy-800);border:1px solid var(--silver);}
 
+
+  /* ---------- Clientes: listado y perfil ---------- */
+  .clientes-buscar{width:320px;max-width:100%;}
+  .clientes-buscar input{width:100%;}
+  .panel-chip.chip-todos.active,.panel-chip.chip-vendido.active{background:var(--navy-800);border-color:var(--navy-800);color:#fff;}
+  .panel-chip.chip-seguimiento.active{background:#2E7D4F;border-color:#2E7D4F;color:#fff;}
+  .panel-chip.chip-pendiente.active{background:#D9730D;border-color:#D9730D;color:#fff;}
+  .panel-chip.chip-cerrado.active{background:#C24234;border-color:#C24234;color:#fff;}
+  .cliente-fila{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.3fr) minmax(0,1fr) 70px;gap:14px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--silver-light);text-decoration:none;color:inherit;}
+  .cliente-fila:hover{background:var(--navy-50);}
+  .cliente-fila:last-child{border-bottom:none;}
+  .cliente-nombre{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cliente-sub{font-size:11px;color:var(--slate);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cliente-motivo{font-size:10.5px;font-weight:700;color:var(--charcoal);margin-left:6px;}
+  .cliente-vend{font-size:11.5px;font-weight:600;color:var(--charcoal);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cliente-cuando{font-size:11px;color:var(--slate);text-align:right;}
+  .perfil-cabecera{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px;}
+  .perfil-nombre{font-size:20px;font-weight:800;margin:0;color:var(--ink);}
+  .perfil-sub{font-size:12px;color:var(--slate);margin-top:4px;}
+  .perfil-chat{text-decoration:none;padding:9px 16px;}
+  .ptag-etiqueta{background:var(--charcoal);}
+  .perfil-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:start;}
+  .perfil-col{display:flex;flex-direction:column;gap:18px;min-width:0;}
+  .perfil-titulo{display:flex;justify-content:space-between;align-items:center;}
+  .perfil-grupo{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--navy-600);margin:14px 0 6px;}
+  .perfil-porque{font-size:12.5px;font-weight:600;border-radius:8px;padding:10px 12px;margin:8px 0 12px;background:var(--navy-50);color:var(--navy-800);border-left:3px solid var(--navy-800);}
+  .porque-seguimiento{background:#E8F4EC;color:#1B5E38;border-left-color:#2E7D4F;}
+  .porque-pendiente{background:#FDF0E3;color:#8A4A08;border-left-color:#D9730D;}
+  .porque-cerrado{background:#FBEAE8;color:#7A2A21;border-left-color:#C24234;}
+  .perfil-etapas{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;}
+  .perfil-etapa{font-size:10px;font-weight:700;padding:4px 8px;border-radius:5px;background:var(--silver-light);color:var(--slate);}
+  .perfil-etapa.hecha{background:var(--navy-100);color:var(--navy-800);}
+  .perfil-etapa.actual{background:var(--navy-800);color:#fff;}
+  .perfil-cita{margin:0;padding:12px 14px;border-radius:10px;background:var(--silver-light);border:1px solid var(--silver);font-size:12.5px;line-height:1.5;color:var(--charcoal);}
+  .perfil-agenda{border:1px solid var(--silver);border-radius:9px;padding:10px 12px;margin-bottom:8px;}
+  .perfil-agenda.vencida{border-color:#F3D2AE;background:#FFFaf4;}
+  .perfil-agenda-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;}
+  .perfil-agenda-estado{font-size:11px;color:var(--slate);margin:3px 0 4px;}
+  .perfil-agenda.vencida .perfil-agenda-estado{color:#8A4A08;font-weight:700;}
+  .perfil-reagenda{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:11.5px;padding:7px 0;border-bottom:1px solid var(--silver-light);}
+  .perfil-reagenda:last-child{border-bottom:none;}
+  .perfil-reagenda-motivo{font-size:10px;font-weight:800;background:#FDF0E3;color:#8A4A08;border-radius:5px;padding:2px 7px;}
+  .perfil-reagenda-quien{color:var(--slate);font-size:10.5px;}
+  .acciones-agenda-botones{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+  .form-reagendar{margin-top:8px;padding:10px 12px;border-radius:9px;background:var(--navy-50);border:1px solid var(--navy-100);}
+
   /* ---------- Tablet (hasta 1100px): se apilan columnas; los datos del lead se abren con el botón "Datos" ---------- */
   @media (max-width: 1100px){
     .dash-grid,.td-grid,.seg-grid,.pipe-grid,.admin-grid-3,.admin-grid-2{grid-template-columns:1fr;}
     .pipe-summary{grid-template-columns:repeat(2,1fr);}
     .panel-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .perfil-grid{grid-template-columns:1fr;}
     .solo-tablet{display:block;}
     .detail{display:none;}
     .body-row[data-vista="info"] .conversation{display:none;}
@@ -576,6 +623,8 @@
     .admin-table{display:block;overflow-x:auto;white-space:nowrap;}
     .slideover{width:100vw;}
     .panel-grid{grid-template-columns:1fr;}
+    .cliente-fila{grid-template-columns:minmax(0,1fr) auto;padding:12px 14px;}
+    .cliente-vend,.cliente-cuando{display:none;}
     .panel-lista{max-height:none;}
     .panel-nav{width:100%;justify-content:space-between;}
     .cerrar-chat-caja,.conv-cerrado{margin:0 12px 10px;}

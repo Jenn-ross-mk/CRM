@@ -5,6 +5,9 @@ export const Iconos = {
   tablero: (
     <svg {...base}><rect x="3" y="3" width="7.5" height="9" rx="1.5" /><rect x="13.5" y="3" width="7.5" height="5" rx="1.5" /><rect x="13.5" y="11" width="7.5" height="10" rx="1.5" /><rect x="3" y="15" width="7.5" height="6" rx="1.5" /></svg>
   ),
+  cliente: (
+    <svg {...base}><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10.5" r="2.5" /><path d="M5.5 17c.6-2 2-3 3.5-3s2.9 1 3.5 3M14.5 9h4M14.5 12.5h4" /></svg>
+  ),
   inicio: (
     <svg {...base}><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /></svg>
   ),
