@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { crearAlerta, eliminarAlerta } from '@/app/acciones/alertas';
+import { agendarContacto, cerrarAgenda } from '@/app/acciones/test-drives';
 import { actualizarDatosLead, agregarEtiqueta, agregarNota, cambiarEtapa, quitarEtiqueta, reasignarLead, usarPlantilla } from '@/app/acciones/leads';
-import { ETIQUETA_CANAL, FORMAS_PAGO, etapasDe, etiquetaFormaPago, ordenEtapa, ordenFinal } from '@/lib/constantes';
+import { ETIQUETA_CANAL, ETIQUETA_TIPO_TURNO, FORMAS_PAGO, etapasDe, etiquetaFormaPago, ordenEtapa, ordenFinal } from '@/lib/constantes';
 import type { DetalleLead } from '@/lib/datos';
 import { diasDesde, fechaCorta, fechaLocal, fechaTurno, horaBandeja, horaLocal } from '@/lib/fechas';
 import type { Usuario } from '@/lib/tipos';
@@ -221,20 +222,57 @@ function TabRecordatorios({ detalle, yo }: Props) {
   const [mensaje, setMensaje] = useState('');
   const accion = useAccion();
   const borrar = useAccion();
+  const [agendando, setAgendando] = useState(false);
+  const [tipoAgenda, setTipoAgenda] = useState<'llamada' | 'visita'>('llamada');
+  const [fechaAgenda, setFechaAgenda] = useState(fechaLocal());
+  const [horaAgenda, setHoraAgenda] = useState('10:00');
+  const agenda = useAccion();
+  const marcar = useAccion();
 
   return (
     <div className="detail-pane active">
       <div className="detail-block">
-        <p className="detail-label">Test drive y llamadas agendadas</p>
+        <p className="detail-label">Test drive, llamadas y visitas</p>
         {turnos.length ? turnos.map((t) => (
           <div key={t.id} className="agenda-item">
             <div className="agenda-icon">{Iconos.calendario}</div>
-            <div>
-              <div className="agenda-title">Test drive · {t.vehiculo}</div>
-              <div className="agenda-sub">{fechaTurno(fechaLocal(t.fecha_hora))} · {horaLocal(t.fecha_hora)} · {t.estado === 'pendiente' ? 'pendiente de aprobación' : 'aprobado'}</div>
+            <div style={{ flex: 1 }}>
+              <div className="agenda-title">{ETIQUETA_TIPO_TURNO[t.tipo] ?? t.tipo}{t.tipo === 'test_drive' && t.vehiculo ? ` · ${t.vehiculo}` : ''}</div>
+              <div className="agenda-sub">
+                {fechaTurno(fechaLocal(t.fecha_hora))} · {horaLocal(t.fecha_hora)} · {t.tipo !== 'test_drive' ? 'pendiente' : t.estado === 'pendiente' ? 'pendiente de aprobación' : 'aprobado'}
+              </div>
+              {t.tipo !== 'test_drive' && (t.vendedor_id === yo.id || yo.rol !== 'vendedor') && (
+                <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                  <button className="btn-link" style={{ fontSize: 10.5 }} disabled={marcar.pendiente} onClick={() => marcar.ejecutar(() => cerrarAgenda(t.id, 'hecho'))}>Marcar realizada</button>
+                  <button className="btn-link" style={{ fontSize: 10.5, color: 'var(--slate)' }} disabled={marcar.pendiente} onClick={() => marcar.ejecutar(() => cerrarAgenda(t.id, 'rechazado'))}>Cancelar</button>
+                </div>
+              )}
             </div>
           </div>
         )) : <Vacio>Nada agendado.</Vacio>}
+        <Toast resultado={marcar.resultado?.ok ? null : marcar.resultado} />
+        <button className="tag-add" style={{ width: '100%', textAlign: 'center', marginTop: 6 }} onClick={() => setAgendando(!agendando)}>+ Agendar llamada o visita</button>
+        {agendando && (
+          <form style={{ marginTop: 12 }} onSubmit={(e) => {
+            e.preventDefault();
+            agenda.ejecutar(() => agendarContacto(lead.id, { tipo: tipoAgenda, fecha: fechaAgenda, hora: horaAgenda }), (r) => r.ok && setAgendando(false));
+          }}>
+            <div className="fld" style={{ marginBottom: 9 }}>
+              <label>Tipo</label>
+              <select value={tipoAgenda} onChange={(e) => setTipoAgenda(e.target.value as 'llamada' | 'visita')}>
+                <option value="llamada">Llamada</option>
+                <option value="visita">Visita</option>
+              </select>
+            </div>
+            <div className="form-grid" style={{ marginBottom: 10 }}>
+              <div className="fld"><label>Fecha</label><input type="date" value={fechaAgenda} onChange={(e) => setFechaAgenda(e.target.value)} required /></div>
+              <div className="fld"><label>Hora</label><input type="time" value={horaAgenda} onChange={(e) => setHoraAgenda(e.target.value)} required /></div>
+            </div>
+            <button className="alert-btn" style={{ width: '100%' }} disabled={agenda.pendiente}>Agendar</button>
+          </form>
+        )}
+        <Toast resultado={agenda.resultado} />
+        <p className="dcard-sub" style={{ margin: '8px 0 0' }}>Los test drive se piden desde la sección Test drive.</p>
       </div>
       <div className="detail-block">
         <p className="detail-label">Recordatorios de este lead</p>

@@ -4,7 +4,6 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { crearClienteServidor } from '@/lib/supabase/server';
 import { rutaInicio } from '@/lib/sesion';
-import type { Rol } from '@/lib/tipos';
 
 export async function iniciarSesion(_prev: string | null, formData: FormData): Promise<string | null> {
   const email = String(formData.get('email') ?? '').trim();
@@ -15,12 +14,12 @@ export async function iniciarSesion(_prev: string | null, formData: FormData): P
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !data.user) return 'Email o contraseña incorrectos.';
 
-  const { data: usuario } = await supabase.from('usuarios').select('rol, activo').eq('auth_id', data.user.id).maybeSingle<{ rol: Rol; activo: boolean }>();
+  const { data: usuario } = await supabase.from('usuarios').select('activo').eq('auth_id', data.user.id).maybeSingle<{ activo: boolean }>();
   if (!usuario || !usuario.activo) {
     await supabase.auth.signOut();
     return usuario ? 'Tu usuario está dado de baja. Contactá a un administrador.' : 'Tu cuenta no está vinculada a ningún usuario del CRM. Contactá a un administrador.';
   }
-  redirect(rutaInicio(usuario.rol));
+  redirect(rutaInicio());
 }
 
 export async function cerrarSesion() {

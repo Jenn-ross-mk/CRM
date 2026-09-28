@@ -7,6 +7,23 @@ Sistema CRM de ventas de Akar Automotores, construido a partir del mockup `Siste
 
 ## Qué incluye
 
+### Panel general (primera pantalla de todos los roles)
+
+Los leads se ordenan en cuatro bloques. El administrador ve todos, el supervisor los de sus sucursales y el vendedor los suyos. Se filtra por día, semana o mes (o *Todo*): los leads abiertos por fecha de ingreso, los cerrados por fecha de cierre y los vendidos por fecha de venta. Cada lead abre su detalle al tocarlo.
+
+| Bloque | Qué entra |
+| --- | --- |
+| **En seguimiento** (verde) | *Activos*: leads nuevos y conversaciones en curso. *Agendados*: tienen una llamada, test drive o visita agendada para después de hoy. |
+| **Pendientes** (naranja) | La agenda es hoy o ya pasó y no se le escribió desde ese día, o el cliente no escribe hace 7 días o más (*Sin respuesta* si se le escribió, *Sin contacto* si no). |
+| **Cerrados** (rojo) | Chats cerrados, con una etiqueta por motivo: Falta de dinero, Crédito rechazado, Usado no admitido, Compró en competencia. *Otros* (con texto obligatorio) solo lo puede usar el administrador. |
+| **Vendidos** | Ventas registradas (automáticas al marcar Ganado/Adjudicado o cargadas a mano). |
+
+- **Cerrar chat**: desde la conversación o desde el desplegable de cada lead del panel. El motivo es obligatorio y la base lo vuelve a controlar. El chat deja de verse en la bandeja y en Mensajes; el administrador o el supervisor lo pueden reabrir.
+- **Agendar llamada o visita**: desde la pestaña *Recordatorios* del chat. Se marca como realizada o se cancela desde el mismo lugar. Los test drive se siguen pidiendo desde *Test drive*.
+- Comunicados, giras y entregas (el panel anterior) pasaron a **Comunicados**.
+
+### Pantallas
+
 | Vendedor | Supervisor / Administrador |
 | --- | --- |
 | **Inicio**: giras, comunicados, entregas, ranking del mes y *Mis alertas* con calendario | **Mensajes**: todas las conversaciones (el supervisor, las de sus sucursales), filtro por vendedor, asignar/reasignar |
@@ -41,9 +58,11 @@ El esquema es el que se armó junto con el bot (21 tablas + `modelos`), no el de
 supabase/migrations/20260925000000_esquema_real.sql   Partes 1 a 5 (ya aplicadas en la base de prueba)
 supabase/migrations/20260925000100_parte6_crm.sql     Parte 6: vínculo con Auth, permisos (RLS), vista bandeja
 supabase/parte6/00..08_*.sql                           La Parte 6 en bloques chicos, para pegar en el SQL Editor
+supabase/migrations/20260928000000_parte7_panel.sql    Parte 7: Panel general, cierre de leads, llamadas y visitas
+supabase/parte7/01..04_*.sql                           La Parte 7 en bloques, para pegar en el SQL Editor
 ```
 
-En la **base de prueba** hay que correr solamente los bloques de `supabase/parte6/`, en orden y de a uno (Supabase → SQL Editor → New query → Run). Cada archivo explica qué hace y qué resultado esperar. El Bloque 0 solo lee: sirve para confirmar los valores permitidos antes de cambiar nada.
+En la **base de prueba** hay que correr los bloques de `supabase/parte6/` (si todavía no se corrieron) y después los de `supabase/parte7/`, en orden y de a uno (Supabase → SQL Editor → New query → Run). Cada archivo explica qué hace y qué resultado esperar. El Bloque 0 solo lee: sirve para confirmar los valores permitidos antes de cambiar nada.
 
 Para una base **nueva** (por ejemplo, producción): `npx supabase link --project-ref <ref>` y `npx supabase db push`.
 

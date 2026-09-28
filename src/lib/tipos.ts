@@ -6,6 +6,8 @@ export type Canal = 'whatsapp' | 'messenger' | 'instagram' | 'web' | 'marketplac
 export type EstadoUsuario = 'activo' | 'ocupado' | 'desconectado';
 export type EstadoLead = 'en_conversacion' | 'en_cola' | 'asignacion_manual' | 'derivado' | 'perdido' | 'recuperar' | 'no_contactar' | 'cerrado';
 export type EstadoTurno = 'pendiente' | 'aprobado' | 'rechazado' | 'hecho';
+export type TipoTurno = 'test_drive' | 'llamada' | 'visita';
+export type MotivoCierre = 'falta_dinero' | 'credito_rechazado' | 'usado_no_admitido' | 'compro_competencia' | 'otros';
 export type Prioridad = 'alta' | 'media' | 'baja';
 export type AutorTipo = 'cliente' | 'bot' | 'vendedor';
 
@@ -75,6 +77,12 @@ export interface Lead {
   leido: boolean;
   ultimo_mensaje_en: string;
   etapa_actualizada_en: string;
+  /** Último mensaje enviado al cliente por un vendedor o con plantilla (no cuenta el bot). */
+  ultimo_saliente_en: string | null;
+  motivo_cierre: MotivoCierre | null;
+  detalle_cierre: string | null;
+  cerrado_en: string | null;
+  cerrado_por: number | null;
   creado_en: string;
   actualizado_en: string;
 }
@@ -125,7 +133,7 @@ export interface Alerta {
 
 export interface Turno {
   id: number;
-  tipo: string;
+  tipo: TipoTurno;
   lead_id: number | null;
   cliente_nombre: string;
   cliente_telefono: string | null;

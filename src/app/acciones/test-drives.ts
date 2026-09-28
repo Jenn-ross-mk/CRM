@@ -3,7 +3,7 @@
 import { refresh } from 'next/cache';
 import { contexto, error, ok, texto } from '@/lib/acciones';
 import { instanteLocal } from '@/lib/fechas';
-import type { EstadoTurno, Resultado } from '@/lib/tipos';
+import type { EstadoTurno, LeadBandeja, Resultado } from '@/lib/tipos';
 
 export async function solicitarTurno(fd: FormData): Promise<Resultado> {
   const { supabase, usuario } = await contexto();
@@ -44,6 +44,44 @@ export async function cambiarEstadoTurno(id: number, estado: EstadoTurno): Promi
   const cambios = estado === 'aprobado' ? { estado, aprobado_por: usuario.id } : { estado };
   const { error: e } = await supabase.from('turnos').update(cambios).eq('id', id);
   if (e) return error(e);
+  refresh();
+  return ok();
+}
+
+/**
+ * Agenda una llamada o visita para un lead (desde el chat). No necesita aprobación: queda "pendiente"
+ * hasta que se marca como realizada o se cancela. La usa el Panel general (agendados / agenda vencida).
+ */
+export async function agendarContacto(leadId: number, datos: { tipo: string; fecha: string; hora: string }): Promise<Resultado> {
+  if (datos.tipo !== 'llamada' && datos.tipo !== 'visita') return error('Elegí llamada o visita.');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.fecha) || !/^\d{2}:\d{2}$/.test(datos.hora)) return error('Completá la fecha y la hora.');
+  const { supabase, usuario } = await contexto();
+  const { data: lead } = await supabase.from('bandeja').select('nombre, telefono, sucursal_id, vendedor_id, vehiculo_interes')
+    .eq('id', leadId).maybeSingle<Pick<LeadBandeja, 'nombre' | 'telefono' | 'sucursal_id' | 'vendedor_id' | 'vehiculo_interes'>>();
+  if (!lead) return error('No se encontró el lead.');
+  const { error: e } = await supabase.from('turnos').insert({
+    tipo: datos.tipo,
+    lead_id: leadId,
+    cliente_nombre: lead.nombre,
+    cliente_telefono: lead.telefono,
+    vehiculo: lead.vehiculo_interes,
+    sucursal_id: lead.sucursal_id,
+    vendedor_id: lead.vendedor_id ?? usuario.id,
+    fecha_hora: instanteLocal(datos.fecha, datos.hora),
+    estado: 'pendiente',
+  });
+  if (e) return error(e);
+  refresh();
+  return ok(datos.tipo === 'llamada' ? 'Llamada agendada.' : 'Visita agendada.');
+}
+
+/** Marca como realizada ('hecho') o cancela ('rechazado') una llamada o visita. */
+export async function cerrarAgenda(id: number, estado: 'hecho' | 'rechazado'): Promise<Resultado> {
+  if (estado !== 'hecho' && estado !== 'rechazado') return error('Estado inválido.');
+  const { supabase } = await contexto();
+  const { data, error: e } = await supabase.from('turnos').update({ estado }).eq('id', id).neq('tipo', 'test_drive').select('id');
+  if (e) return error(e);
+  if (!data?.length) return error('No tenés permiso para modificar esta agenda.');
   refresh();
   return ok();
 }

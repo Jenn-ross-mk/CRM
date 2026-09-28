@@ -36,10 +36,11 @@ export const obtenerSesion = cache(async (): Promise<Sesion> => {
 /** Exige uno de los roles indicados; si no, manda al inicio que le corresponde. */
 export async function exigirRol(roles: Rol[]): Promise<Sesion> {
   const sesion = await obtenerSesion();
-  if (!roles.includes(sesion.usuario.rol)) redirect(rutaInicio(sesion.usuario.rol));
+  if (!roles.includes(sesion.usuario.rol)) redirect(rutaInicio());
   return sesion;
 }
 
-export function rutaInicio(rol: Rol): string {
-  return rol === 'vendedor' ? '/inicio' : '/gestion/mensajes';
+/** Primera pantalla después de iniciar sesión: el Panel general, para todos los roles. */
+export function rutaInicio(): string {
+  return '/panel';
 }

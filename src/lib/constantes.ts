@@ -1,4 +1,4 @@
-import type { Canal, EstadoLead, EstadoTurno, EtapaPipeline, Sector } from './tipos';
+import type { Canal, EstadoLead, EstadoTurno, EtapaPipeline, MotivoCierre, Sector, TipoTurno } from './tipos';
 
 // Los valores guardados en la base van en minúscula y snake_case; estas tablas dan el texto que se muestra.
 export const ETIQUETA_SECTOR: Record<Sector, string> = {
@@ -41,6 +41,22 @@ export const FORMAS_PAGO: { valor: string; etiqueta: string }[] = [
   { valor: 'plan_ahorro', etiqueta: 'Plan de ahorro' },
 ];
 export const etiquetaFormaPago = (v: string | null) => (v ? FORMAS_PAGO.find((f) => f.valor === v)?.etiqueta ?? v : 'A definir');
+
+/** Motivos para cerrar un lead. "Otros" (con texto obligatorio) solo lo ve el administrador. */
+export const MOTIVOS_CIERRE: { valor: MotivoCierre; etiqueta: string; soloAdmin?: boolean }[] = [
+  { valor: 'falta_dinero', etiqueta: 'Falta de dinero' },
+  { valor: 'credito_rechazado', etiqueta: 'Crédito rechazado' },
+  { valor: 'usado_no_admitido', etiqueta: 'Usado no admitido' },
+  { valor: 'compro_competencia', etiqueta: 'Compró en competencia' },
+  { valor: 'otros', etiqueta: 'Otros', soloAdmin: true },
+];
+export const etiquetaMotivoCierre = (m: MotivoCierre | null) => (m ? MOTIVOS_CIERRE.find((x) => x.valor === m)?.etiqueta ?? m : 'Sin motivo');
+
+export const ETIQUETA_TIPO_TURNO: Record<TipoTurno, string> = {
+  test_drive: 'Test drive',
+  llamada: 'Llamada',
+  visita: 'Visita',
+};
 
 export const ESTADO_TURNO_REALIZADO: EstadoTurno = 'hecho';
 

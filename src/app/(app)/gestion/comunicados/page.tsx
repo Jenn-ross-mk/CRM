@@ -3,7 +3,7 @@ import { crearClienteServidor } from '@/lib/supabase/server';
 import type { Comunicado, Entrega, Gira } from '@/lib/tipos';
 import { PanelGeneral } from './panel';
 
-export default async function PanelPage() {
+export default async function ComunicadosPage() {
   await exigirRol(['admin', 'supervisor']);
   const supabase = await crearClienteServidor();
   const [c, g, e] = await Promise.all([

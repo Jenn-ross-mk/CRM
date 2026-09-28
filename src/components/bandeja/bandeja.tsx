@@ -2,13 +2,14 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
-import { enviarMensaje, marcarLeido } from '@/app/acciones/leads';
-import { ETIQUETA_CANAL, ETIQUETA_ESTADO_LEAD, etiquetaSector } from '@/lib/constantes';
+import { enviarMensaje, marcarLeido, reabrirLead } from '@/app/acciones/leads';
+import { ETIQUETA_CANAL, ETIQUETA_ESTADO_LEAD, etiquetaMotivoCierre, etiquetaSector } from '@/lib/constantes';
 import type { DetalleLead } from '@/lib/datos';
-import { horaBandeja, horaLocal } from '@/lib/fechas';
+import { fechaCorta, horaBandeja, horaLocal } from '@/lib/fechas';
 import type { EtapaPipeline, Etiqueta, LeadBandeja, Mensaje, Sucursal, Usuario } from '@/lib/tipos';
 import { Iconos } from '../iconos';
-import { Avatar, useAccion } from '../ui';
+import { FormCerrarLead } from '../cerrar-lead';
+import { Avatar, Toast, useAccion } from '../ui';
 import { FormNuevoLead } from './form-nuevo-lead';
 import { PanelDetalle } from './panel-detalle';
 
@@ -126,8 +127,9 @@ export function Bandeja(props: PropsBandeja) {
 
       {seleccionado && lead ? (
         <>
-          <Conversacion detalle={seleccionado} modo={modo} porId={porId} sucursal={lead.sucursal_id ? sucursalNombre.get(lead.sucursal_id) ?? '—' : '—'}
-            onVolver={() => setVista('lista')} onInfo={() => setVista('info')} />
+          <Conversacion key={lead.id} detalle={seleccionado} modo={modo} yo={props.yo} porId={porId} sucursal={lead.sucursal_id ? sucursalNombre.get(lead.sucursal_id) ?? '—' : '—'}
+            onVolver={() => setVista('lista')} onInfo={() => setVista('info')}
+            onCerrado={() => { setVista('lista'); navegar({ lead: null }); }} />
           <PanelDetalle key={lead.id} {...props} detalle={seleccionado} porId={porId} sucursalNombre={sucursalNombre} onVolver={() => setVista('chat')} />
         </>
       ) : (
@@ -146,12 +148,16 @@ export function Bandeja(props: PropsBandeja) {
   );
 }
 
-function Conversacion({ detalle, modo, porId, sucursal, onVolver, onInfo }: {
-  detalle: DetalleLead; modo: 'vendedor' | 'gestion'; porId: Map<number, Usuario>; sucursal: string; onVolver: () => void; onInfo: () => void;
+function Conversacion({ detalle, modo, yo, porId, sucursal, onVolver, onInfo, onCerrado }: {
+  detalle: DetalleLead; modo: 'vendedor' | 'gestion'; yo: Usuario; porId: Map<number, Usuario>; sucursal: string;
+  onVolver: () => void; onInfo: () => void; onCerrado: () => void;
 }) {
   const { lead, mensajes } = detalle;
   const [texto, setTexto] = useState('');
+  const [cerrando, setCerrando] = useState(false);
   const { pendiente, resultado, ejecutar } = useAccion();
+  const reabrir = useAccion();
+  const cerrado = lead.estado === 'cerrado';
   const fin = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fin.current?.scrollIntoView({ block: 'end' }); }, [mensajes.length, lead.id]);
@@ -175,11 +181,31 @@ function Conversacion({ detalle, modo, porId, sucursal, onVolver, onInfo }: {
           <span className={`pill ${lead.prioridad === 'alta' ? 'pill-navy' : lead.prioridad === 'media' ? 'pill-charcoal' : 'pill-outline'}`}>{prioridad}</span>
           <span className="pill pill-outline">{etiquetaSector(lead.sector)}</span>
           {modo === 'gestion' && <span className="pill pill-outline">{ETIQUETA_ESTADO_LEAD[lead.estado] ?? lead.estado}</span>}
+          {!cerrado && !cerrando && <button className="conv-cerrar" onClick={() => setCerrando(true)}>Cerrar chat</button>}
         </div>
         <div className="conv-sub">
           {lead.telefono || 'Sin teléfono'} · {ETIQUETA_CANAL[lead.canal] ?? lead.canal} · Sucursal {sucursal}{modo === 'gestion' ? ` · ${atiende}` : ''}
         </div>
       </div>
+      {cerrando && !cerrado && (
+        <div className="cerrar-chat-caja">
+          <FormCerrarLead leadId={lead.id} esAdmin={yo.rol === 'admin'} onCancelar={() => setCerrando(false)} onCerrado={onCerrado} />
+        </div>
+      )}
+      {cerrado && (
+        <div className="conv-cerrado">
+          <span>
+            Chat cerrado · {etiquetaMotivoCierre(lead.motivo_cierre)}{lead.detalle_cierre ? ` (${lead.detalle_cierre})` : ''}
+            {lead.cerrado_en ? ` · ${fechaCorta(lead.cerrado_en)}` : ''}. No aparece en la lista de mensajes.
+          </span>
+          {modo === 'gestion' && (
+            <button className="btn-link" disabled={reabrir.pendiente} onClick={() => reabrir.ejecutar(() => reabrirLead(lead.id))}>
+              {reabrir.pendiente ? 'Reabriendo…' : 'Reabrir chat'}
+            </button>
+          )}
+          <Toast resultado={reabrir.resultado?.ok ? null : reabrir.resultado} />
+        </div>
+      )}
       <div className="messages">
         {mensajes.map((m) => <Burbuja key={m.id} m={m} autor={m.autor_usuario_id ? porId.get(m.autor_usuario_id) : undefined} />)}
         {!mensajes.length && <div className="empty-slots">Todavía no hay mensajes en esta conversación.</div>}

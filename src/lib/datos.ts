@@ -1,7 +1,8 @@
 import 'server-only';
 import { crearClienteServidor } from './supabase/server';
 import { TRAMOS_SEGUIMIENTO, ordenEtapa, ordenFinal } from './constantes';
-import { diasDesde } from './fechas';
+import { diasDesde, instanteLocal, msHaceDias } from './fechas';
+import { COLUMNAS_LEAD_PANEL, type Agenda, type LeadPanel } from './panel';
 import type { Alerta, EtapaPipeline, Etiqueta, Horario, LeadBandeja, Mensaje, Nota, Sucursal, Turno, Usuario, Venta } from './tipos';
 
 export interface DetalleLead {
@@ -47,7 +48,8 @@ export async function listarEtiquetas(): Promise<Etiqueta[]> {
 /** Leads visibles para el usuario (RLS), con filtros opcionales. */
 export async function listarBandeja(filtros: { vendedorId?: number | null; sinAsignar?: boolean; q?: string }): Promise<LeadBandeja[]> {
   const supabase = await crearClienteServidor();
-  let query = supabase.from('bandeja').select('*').order('ultimo_mensaje_en', { ascending: false }).limit(500);
+  // Los chats cerrados no se listan: se ven en el Panel general.
+  let query = supabase.from('bandeja').select('*').neq('estado', 'cerrado').order('ultimo_mensaje_en', { ascending: false }).limit(500);
   if (filtros.sinAsignar) query = query.is('vendedor_id', null);
   else if (filtros.vendedorId) query = query.eq('vendedor_id', filtros.vendedorId);
   if (filtros.q) {
@@ -150,4 +152,59 @@ export async function calcularSeguimiento(filtros: { vendedorId?: number; sucurs
   }
   pendientes.sort((a, b) => b.dias - a.dias);
   return { conteos, pendientes };
+}
+
+// ---------- Panel general ----------
+
+export interface DatosPanel {
+  leads: LeadPanel[];
+  agendas: Agenda[];
+  ventas: Venta[];
+  etapas: EtapaPipeline[];
+}
+
+/**
+ * Leads del Panel general. Lo que ve cada uno lo define RLS (admin: todo; supervisor: sus sucursales; vendedor: lo suyo).
+ * El período filtra los leads abiertos por fecha de ingreso, los cerrados por fecha de cierre y las ventas por fecha de venta.
+ */
+export async function cargarPanel(filtros: {
+  rango: { desde: string; hasta: string } | null;
+  vendedorId: number | null;
+  /** Para las ventas, que todos pueden leer: null = todas (admin). */
+  sucursales: number[] | null;
+  yoId: number;
+  soloPropias: boolean;
+}): Promise<DatosPanel> {
+  const supabase = await crearClienteServidor();
+  const desde = filtros.rango && instanteLocal(filtros.rango.desde, '00:00');
+  const hasta = filtros.rango && instanteLocal(filtros.rango.hasta, '00:00');
+
+  let abiertos = supabase.from('bandeja').select(COLUMNAS_LEAD_PANEL).neq('estado', 'cerrado').order('ultimo_mensaje_en', { ascending: false }).limit(2000);
+  let cerrados = supabase.from('bandeja').select(COLUMNAS_LEAD_PANEL).eq('estado', 'cerrado').order('cerrado_en', { ascending: false }).limit(1000);
+  let ventas = supabase.from('ventas').select('*').order('fecha', { ascending: false }).order('id', { ascending: false }).limit(1000);
+  if (desde && hasta) {
+    abiertos = abiertos.gte('creado_en', desde).lt('creado_en', hasta);
+    cerrados = cerrados.gte('cerrado_en', desde).lt('cerrado_en', hasta);
+    ventas = ventas.gte('fecha', filtros.rango!.desde).lt('fecha', filtros.rango!.hasta);
+  }
+  if (filtros.vendedorId) {
+    abiertos = abiertos.eq('vendedor_id', filtros.vendedorId);
+    cerrados = cerrados.eq('vendedor_id', filtros.vendedorId);
+    ventas = ventas.eq('vendedor_id', filtros.vendedorId);
+  } else if (filtros.soloPropias) {
+    ventas = ventas.eq('vendedor_id', filtros.yoId);
+  } else if (filtros.sucursales) {
+    ventas = ventas.or(`vendedor_id.eq.${filtros.yoId},sucursal_id.in.(${filtros.sucursales.join(',') || 0})`);
+  }
+  // Agendas vigentes de los últimos 6 meses en adelante (las más viejas ya cuentan como "sin respuesta").
+  const agendas = supabase.from('turnos').select('id, tipo, lead_id, fecha_hora, estado, vehiculo, vendedor_id')
+    .not('lead_id', 'is', null).in('estado', ['pendiente', 'aprobado']).gte('fecha_hora', new Date(msHaceDias(180)).toISOString()).order('fecha_hora');
+
+  const [a, c, v, t, etapas] = await Promise.all([abiertos, cerrados, ventas, agendas, listarEtapas()]);
+  return {
+    leads: [...((a.data ?? []) as unknown as LeadPanel[]), ...((c.data ?? []) as unknown as LeadPanel[])],
+    agendas: (t.data ?? []) as Agenda[],
+    ventas: (v.data ?? []) as Venta[],
+    etapas,
+  };
 }

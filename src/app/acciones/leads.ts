@@ -2,9 +2,9 @@
 
 import { refresh } from 'next/cache';
 import { contexto, error, ok, texto } from '@/lib/acciones';
-import { CANALES_MANUALES, FORMAS_PAGO, PLANTILLA_SEGUIMIENTO, SECTORES_VENTA, ordenFinal } from '@/lib/constantes';
+import { CANALES_MANUALES, FORMAS_PAGO, MOTIVOS_CIERRE, PLANTILLA_SEGUIMIENTO, SECTORES_VENTA, etiquetaMotivoCierre, ordenFinal } from '@/lib/constantes';
 import { crearClienteAdmin } from '@/lib/supabase/server';
-import type { Canal, EtapaPipeline, Lead, Prioridad, Resultado, Sector } from '@/lib/tipos';
+import type { Canal, EtapaPipeline, Lead, MotivoCierre, Prioridad, Resultado, Sector } from '@/lib/tipos';
 
 type Supabase = Awaited<ReturnType<typeof contexto>>['supabase'];
 
@@ -242,4 +242,51 @@ export async function crearLead(fd: FormData): Promise<Resultado> {
   }
   refresh();
   return ok(String(lead.id));
+}
+
+/**
+ * Cierra el chat con un motivo obligatorio: deja de verse en la bandeja y pasa al bloque "Cerrados" del Panel general.
+ * El motivo "otros" (con texto) es solo para administradores; la base lo vuelve a controlar.
+ */
+export async function cerrarLead(leadId: number, motivo: string, detalle: string): Promise<Resultado> {
+  const { supabase, usuario, esAdmin } = await contexto();
+  const elegido = MOTIVOS_CIERRE.find((m) => m.valor === motivo);
+  if (!elegido) return error('Elegí un motivo de cierre.');
+  if (elegido.soloAdmin && !esAdmin) return error('Solo un administrador puede cerrar con el motivo "Otros".');
+  const texto = detalle.trim();
+  if (elegido.valor === 'otros' && !texto) return error('Escribí el motivo del cierre.');
+
+  const { data, error: e } = await supabase.from('leads').update({
+    estado: 'cerrado',
+    motivo_cierre: elegido.valor,
+    detalle_cierre: elegido.valor === 'otros' ? texto : null,
+    cerrado_en: new Date().toISOString(),
+    cerrado_por: usuario.id,
+  }).eq('id', leadId).neq('estado', 'cerrado').select('id');
+  if (e) return error(e);
+  if (!data?.length) return error('Este chat ya estaba cerrado o no tenés permiso para cerrarlo.');
+
+  await supabase.from('lead_historial').insert({
+    lead_id: leadId,
+    tipo: 'sistema',
+    descripcion: `Chat cerrado por ${usuario.nombre}: ${etiquetaMotivoCierre(elegido.valor as MotivoCierre)}${elegido.valor === 'otros' ? ` (${texto})` : ''}`,
+    usuario_id: usuario.id,
+  });
+  refresh();
+  return ok('Chat cerrado.');
+}
+
+/** Reabre un chat cerrado (admin o supervisor): vuelve a la bandeja y la base borra los datos del cierre. */
+export async function reabrirLead(leadId: number): Promise<Resultado> {
+  const { supabase, usuario, esGestion } = await contexto();
+  if (!esGestion) return error('Solo un administrador o supervisor puede reabrir un chat.');
+  const { data: lead } = await supabase.from('leads').select('vendedor_id').eq('id', leadId).maybeSingle<Pick<Lead, 'vendedor_id'>>();
+  if (!lead) return error('No se encontró el lead.');
+  const { data, error: e } = await supabase.from('leads').update({ estado: lead.vendedor_id ? 'derivado' : 'asignacion_manual' })
+    .eq('id', leadId).eq('estado', 'cerrado').select('id');
+  if (e) return error(e);
+  if (!data?.length) return error('Este chat no está cerrado o no tenés permiso para reabrirlo.');
+  await supabase.from('lead_historial').insert({ lead_id: leadId, tipo: 'sistema', descripcion: `Chat reabierto por ${usuario.nombre}`, usuario_id: usuario.id });
+  refresh();
+  return ok('Chat reabierto.');
 }
