@@ -19,6 +19,7 @@ Los leads se ordenan en cuatro bloques. El administrador ve todos, el supervisor
 | **Vendidos** | Ventas registradas (automáticas al marcar Ganado/Adjudicado o cargadas a mano). |
 
 - **Cerrar chat**: desde la conversación o desde el desplegable de cada lead del panel. El motivo es obligatorio y la base lo vuelve a controlar. El chat deja de verse en la bandeja y en Mensajes; el administrador o el supervisor lo pueden reabrir.
+- **Reapertura automática**: si el cliente de un chat cerrado vuelve a escribir, la base lo reabre sola, con el mismo vendedor (o para asignación manual si ese vendedor está dado de baja) y con toda la conversación anterior. n8n tiene que guardar el mensaje en el lead que ya existe para ese contacto, sin crear uno nuevo.
 - **Agendar llamada o visita**: desde la pestaña *Recordatorios* del chat. Se marca como realizada o se cancela desde el mismo lugar. Los test drive se siguen pidiendo desde *Test drive*.
 - Comunicados, giras y entregas (el panel anterior) pasaron a **Comunicados**.
 
@@ -59,7 +60,7 @@ supabase/migrations/20260925000000_esquema_real.sql   Partes 1 a 5 (ya aplicadas
 supabase/migrations/20260925000100_parte6_crm.sql     Parte 6: vínculo con Auth, permisos (RLS), vista bandeja
 supabase/parte6/00..08_*.sql                           La Parte 6 en bloques chicos, para pegar en el SQL Editor
 supabase/migrations/20260928000000_parte7_panel.sql    Parte 7: Panel general, cierre de leads, llamadas y visitas
-supabase/parte7/01..04_*.sql                           La Parte 7 en bloques, para pegar en el SQL Editor
+supabase/parte7/01..05_*.sql                           La Parte 7 en bloques, para pegar en el SQL Editor
 ```
 
 En la **base de prueba** hay que correr los bloques de `supabase/parte6/` (si todavía no se corrieron) y después los de `supabase/parte7/`, en orden y de a uno (Supabase → SQL Editor → New query → Run). Cada archivo explica qué hace y qué resultado esperar. El Bloque 0 solo lee: sirve para confirmar los valores permitidos antes de cambiar nada.
