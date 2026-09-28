@@ -374,6 +374,7 @@
   .add-inline-form input{flex:1;border:1px solid var(--silver);border-radius:7px;padding:8px 10px;font-size:11.5px;font-family:inherit;background:var(--silver-light);}
   .add-inline-btn{background:var(--navy-800);color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;flex-shrink:0;}
   .admin-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .admin-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
   .seg-grid{display:grid;grid-template-columns:1fr 1.25fr;gap:18px;}
   .chart-box{position:relative;height:230px;}
   .seg-alert-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--silver-light);}
@@ -492,9 +493,34 @@
   .conv-cerrar{margin-left:auto;border:1px solid #F0C9C4;background:var(--white);color:#C24234;border-radius:7px;font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer;font-family:inherit;}
   .conv-cerrado{margin:0 22px 10px;padding:10px 13px;border-radius:8px;background:#FBEAE8;color:#7A2A21;font-size:11.5px;font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 
+
+  /* ---------- Agendamientos: ícono rojo, aviso emergente y tipos ---------- */
+  .rail-item{position:relative;}
+  .rail-badge{position:absolute;top:3px;right:3px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#D93025;color:#fff;font-size:9.5px;font-weight:800;line-height:16px;text-align:center;box-shadow:0 0 0 2px var(--navy-900);}
+  .punto-rojo{display:inline-block;width:9px;height:9px;border-radius:50%;background:#D93025;margin-right:8px;vertical-align:1px;}
+  .alertas-hoy{border-color:#F0C9C4;background:#FFF8F7;}
+  .tipo-agenda{display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;border-radius:4px;padding:2px 6px;margin-right:6px;vertical-align:1px;background:var(--navy-100);color:var(--navy-800);}
+  .tipo-llamada{background:#E8F4EC;color:#1B5E38;}
+  .tipo-visita{background:#FDF0E3;color:#8A4A08;}
+  .aviso-fondo{position:fixed;inset:0;background:rgba(10,20,35,.45);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;}
+  .aviso{background:var(--white);border-radius:14px;width:440px;max-width:100%;max-height:85vh;overflow:auto;box-shadow:0 20px 50px rgba(10,20,35,.25);border-top:4px solid #D93025;}
+  .aviso-head{display:flex;gap:12px;padding:18px 20px 10px;}
+  .aviso-head h3{font-size:15px;font-weight:800;margin:0;color:var(--ink);}
+  .aviso-head p{font-size:11.5px;color:var(--slate);margin:3px 0 0;}
+  .aviso-icono{width:36px;height:36px;border-radius:10px;background:#FBEAE8;color:#D93025;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .aviso-icono svg{width:18px;height:18px;}
+  .aviso-lista{padding:4px 20px;}
+  .aviso-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--silver-light);font-size:12.5px;}
+  .aviso-item:last-child{border-bottom:none;}
+  .aviso-hora{font-weight:800;color:var(--navy-800);font-variant-numeric:tabular-nums;}
+  .aviso-texto{flex:1;}
+  .aviso-acciones{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px 18px;flex-wrap:wrap;}
+  .aviso-acciones .alert-btn{padding:9px 16px;text-decoration:none;}
+  .aviso-btn-sec{background:var(--white);color:var(--navy-800);border:1px solid var(--silver);}
+
   /* ---------- Tablet (hasta 1100px): se apilan columnas; los datos del lead se abren con el botón "Datos" ---------- */
   @media (max-width: 1100px){
-    .dash-grid,.td-grid,.seg-grid,.pipe-grid,.admin-grid-3{grid-template-columns:1fr;}
+    .dash-grid,.td-grid,.seg-grid,.pipe-grid,.admin-grid-3,.admin-grid-2{grid-template-columns:1fr;}
     .pipe-summary{grid-template-columns:repeat(2,1fr);}
     .panel-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .solo-tablet{display:block;}

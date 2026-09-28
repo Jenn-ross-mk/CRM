@@ -9,9 +9,10 @@ import type { EstadoUsuario, Usuario } from '@/lib/tipos';
 import { iniciales } from '@/lib/util';
 import { Iconos } from './iconos';
 import { ETIQUETA_ROL, itemsPorRol } from './navegacion';
+import { AvisoAlertas, type AlertaAviso } from './aviso-alertas';
 import { Avatar } from './ui';
 
-export function Shell({ usuario, sucursal, children }: { usuario: Usuario; sucursal: string | null; children: React.ReactNode }) {
+export function Shell({ usuario, sucursal, alertasHoy, children }: { usuario: Usuario; sucursal: string | null; alertasHoy: AlertaAviso[]; children: React.ReactNode }) {
   const pathname = usePathname();
   const items = itemsPorRol(usuario.rol);
   const actual = items.find((i) => pathname.startsWith(i.href));
@@ -25,6 +26,9 @@ export function Shell({ usuario, sucursal, children }: { usuario: Usuario; sucur
           {items.map((i) => (
             <Link key={i.href} href={i.href} title={i.titulo} className={`rail-item${actual?.href === i.href ? ' active' : ''}`}>
               {Iconos[i.icono]}
+              {i.href === '/agendamientos' && alertasHoy.length > 0 && (
+                <span className="rail-badge" aria-label={`${alertasHoy.length} para hoy`}>{alertasHoy.length}</span>
+              )}
             </Link>
           ))}
         </div>
@@ -52,6 +56,8 @@ export function Shell({ usuario, sucursal, children }: { usuario: Usuario; sucur
           </div>
         </header>
         <main className="page-body">{children}</main>
+        <AvisoAlertas usuarioId={usuario.id} alertas={alertasHoy} rutaAgenda={usuario.rol === 'vendedor' ? '/agendamientos' : null}
+          rutaChat={usuario.rol === 'vendedor' ? '/bandeja' : '/gestion/mensajes'} />
       </div>
     </div>
   );

@@ -8,14 +8,13 @@ import { Iconos } from '@/components/iconos';
 import type { FilaRanking } from '@/components/ranking';
 import { Toast, useAccion, Vacio } from '@/components/ui';
 import { HORAS_ALERTA } from '@/lib/constantes';
-import { fechaCorta, fechaLarga, fechaLocal, fechaTexto, fechaTurno, horaLocal, tituloDia } from '@/lib/fechas';
-import type { Alerta, Comunicado, Entrega, Gira } from '@/lib/tipos';
+import { fechaCorta, fechaLocal, fechaTexto, fechaTurno, horaLocal, tituloDia } from '@/lib/fechas';
+import type { Alerta, Comunicado, Gira } from '@/lib/tipos';
 
 interface Props {
   mes: string;
   comunicados: Comunicado[];
   giras: Gira[];
-  entregas: Entrega[];
   rankingConv: FilaRanking[];
   rankingPlan: FilaRanking[];
   alertas: Alerta[];
@@ -37,7 +36,7 @@ export function Inicio(props: Props) {
   );
 }
 
-function Resumen({ mes, comunicados, giras, entregas, rankingConv, rankingPlan }: Props) {
+function Resumen({ mes, comunicados, giras, rankingConv, rankingPlan }: Props) {
   const columna = (titulo: string, filas: FilaRanking[]) => {
     const max = filas[0]?.ventas || 1;
     return (
@@ -88,19 +87,6 @@ function Resumen({ mes, comunicados, giras, entregas, rankingConv, rankingPlan }
               <div><div className="announce-text">{c.texto}</div><div className="announce-date">{c.cuando ?? ''}</div></div>
             </div>
           )) : <Vacio>Sin comunicados.</Vacio>}
-        </div>
-        <div className="dcard">
-          <h3>Entregas de la semana</h3>
-          {entregas.length ? (
-            <table className="deliv-table">
-              <thead><tr><th>Vehículo</th><th>Cliente</th><th>Fecha</th></tr></thead>
-              <tbody>
-                {entregas.map((e) => (
-                  <tr key={e.id}><td className="deliv-veh">{e.vehiculo}</td><td>{e.cliente_nombre}</td><td><span className="deliv-day">{e.entregada ? 'Entregado' : fechaLarga(e.fecha)}</span></td></tr>
-                ))}
-              </tbody>
-            </table>
-          ) : <Vacio>No hay entregas programadas.</Vacio>}
         </div>
       </div>
     </div>

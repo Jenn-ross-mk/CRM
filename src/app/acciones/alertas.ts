@@ -22,6 +22,15 @@ export async function crearAlerta(datos: { fecha: string; hora: string; mensaje:
   return ok();
 }
 
+/** Marca una alerta como hecha: deja de contar en el aviso y en el ícono rojo de Agendamientos. */
+export async function marcarAlertaHecha(id: number): Promise<Resultado> {
+  const { supabase } = await contexto();
+  const { error: e } = await supabase.from('alertas').update({ leida: true }).eq('id', id);
+  if (e) return error(e);
+  refresh();
+  return ok();
+}
+
 export async function eliminarAlerta(id: number): Promise<Resultado> {
   const { supabase } = await contexto();
   const { error: e } = await supabase.from('alertas').delete().eq('id', id);

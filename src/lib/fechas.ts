@@ -87,6 +87,12 @@ export function nombreMes(clave: string, conAnio = true): string {
 /** Hora 'HH:MM:SS' -> 'HH:MM' */
 export const horaCorta = (h: string) => h.slice(0, 5);
 
+/** Suma `n` días a una fecha 'YYYY-MM-DD'. */
+export function fechaMasDias(ymd: string, n: number): string {
+  const [y, m, d] = ymd.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
 /** Fecha local 'YYYY-MM-DD' de hace `n` días. */
 export function fechaHaceDias(n: number): string {
   return fechaLocal(new Date(Date.now() - n * 86400000));

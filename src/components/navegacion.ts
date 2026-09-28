@@ -15,7 +15,7 @@ const VENDEDOR: ItemNav[] = [
   PANEL,
   { href: '/inicio', titulo: 'Inicio', icono: 'inicio' },
   { href: '/bandeja', titulo: 'Bandeja', icono: 'mensajes' },
-  { href: '/test-drive', titulo: 'Test drive', icono: 'calendario' },
+  { href: '/agendamientos', titulo: 'Agendamientos', icono: 'calendario' },
   { href: '/seguimiento', titulo: 'Seguimiento', icono: 'reloj' },
   { href: '/ranking', titulo: 'Ranking', icono: 'trofeo' },
 ];

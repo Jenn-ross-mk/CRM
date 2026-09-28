@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { crearAlerta, eliminarAlerta } from '@/app/acciones/alertas';
-import { agendarContacto, cerrarAgenda } from '@/app/acciones/test-drives';
+import { agendarContacto, cerrarAgenda, solicitarTurno } from '@/app/acciones/test-drives';
 import { actualizarDatosLead, agregarEtiqueta, agregarNota, cambiarEtapa, quitarEtiqueta, reasignarLead, usarPlantilla } from '@/app/acciones/leads';
-import { ETIQUETA_CANAL, ETIQUETA_TIPO_TURNO, FORMAS_PAGO, etapasDe, etiquetaFormaPago, ordenEtapa, ordenFinal } from '@/lib/constantes';
+import { ETIQUETA_CANAL, ETIQUETA_TIPO_TURNO, FORMAS_PAGO, HORAS_TURNO, etapasDe, etiquetaFormaPago, ordenEtapa, ordenFinal } from '@/lib/constantes';
 import type { DetalleLead } from '@/lib/datos';
 import { diasDesde, fechaCorta, fechaLocal, fechaTurno, horaBandeja, horaLocal } from '@/lib/fechas';
-import type { Usuario } from '@/lib/tipos';
+import type { TipoTurno, Usuario } from '@/lib/tipos';
 import { Iconos } from '../iconos';
 import { Toast, useAccion, Vacio } from '../ui';
 import type { PropsBandeja } from './bandeja';
@@ -24,7 +24,7 @@ export function PanelDetalle(props: Props) {
         <div className={`detail-tab${tab === 'info' ? ' active' : ''}`} onClick={() => setTab('info')}>Info</div>
         <div className={`detail-tab${tab === 'actividad' ? ' active' : ''}`} onClick={() => setTab('actividad')}>Actividad</div>
         <div className={`detail-tab${tab === 'recordatorios' ? ' active' : ''}`} onClick={() => setTab('recordatorios')}>
-          Recordatorios <span className="detail-tab-badge">{detalle.alertas.length}</span>
+          Recordatorios <span className="detail-tab-badge">{detalle.alertas.filter((a) => !a.turno_id).length + detalle.turnos.length}</span>
         </div>
       </div>
       {tab === 'info' && <TabInfo {...props} />}
@@ -214,8 +214,10 @@ function TabActividad({ detalle, porId, etapas }: Props) {
   );
 }
 
-function TabRecordatorios({ detalle, yo }: Props) {
-  const { lead, alertas, turnos } = detalle;
+function TabRecordatorios({ detalle, yo, modelos }: Props) {
+  const { lead, turnos } = detalle;
+  // Las alertas que nacen de un agendamiento ya se ven arriba, en la lista de agendamientos.
+  const alertas = detalle.alertas.filter((a) => !a.turno_id);
   const [abierto, setAbierto] = useState(false);
   const [fecha, setFecha] = useState(fechaLocal());
   const [hora, setHora] = useState('10:00');
@@ -223,7 +225,8 @@ function TabRecordatorios({ detalle, yo }: Props) {
   const accion = useAccion();
   const borrar = useAccion();
   const [agendando, setAgendando] = useState(false);
-  const [tipoAgenda, setTipoAgenda] = useState<'llamada' | 'visita'>('llamada');
+  const [tipoAgenda, setTipoAgenda] = useState<TipoTurno>('llamada');
+  const [vehiculo, setVehiculo] = useState(lead.vehiculo_interes && modelos.includes(lead.vehiculo_interes) ? lead.vehiculo_interes : modelos[0] ?? '');
   const [fechaAgenda, setFechaAgenda] = useState(fechaLocal());
   const [horaAgenda, setHoraAgenda] = useState('10:00');
   const agenda = useAccion();
@@ -251,28 +254,48 @@ function TabRecordatorios({ detalle, yo }: Props) {
           </div>
         )) : <Vacio>Nada agendado.</Vacio>}
         <Toast resultado={marcar.resultado?.ok ? null : marcar.resultado} />
-        <button className="tag-add" style={{ width: '100%', textAlign: 'center', marginTop: 6 }} onClick={() => setAgendando(!agendando)}>+ Agendar llamada o visita</button>
+        <button className="tag-add" style={{ width: '100%', textAlign: 'center', marginTop: 6 }} onClick={() => setAgendando(!agendando)}>+ Agendar llamada, visita o test drive</button>
         {agendando && (
           <form style={{ marginTop: 12 }} onSubmit={(e) => {
             e.preventDefault();
-            agenda.ejecutar(() => agendarContacto(lead.id, { tipo: tipoAgenda, fecha: fechaAgenda, hora: horaAgenda }), (r) => r.ok && setAgendando(false));
+            const pedido = () => {
+              if (tipoAgenda !== 'test_drive') return agendarContacto(lead.id, { tipo: tipoAgenda, fecha: fechaAgenda, hora: horaAgenda });
+              const fd = new FormData();
+              Object.entries({ cliente: lead.nombre, telefono: lead.telefono ?? '', fecha: fechaAgenda, hora: horaAgenda, vehiculo, sucursal_id: String(lead.sucursal_id ?? ''), lead_id: String(lead.id) })
+                .forEach(([k, v]) => fd.set(k, v));
+              return solicitarTurno(fd);
+            };
+            agenda.ejecutar(pedido, (r) => r.ok && setAgendando(false));
           }}>
             <div className="fld" style={{ marginBottom: 9 }}>
               <label>Tipo</label>
-              <select value={tipoAgenda} onChange={(e) => setTipoAgenda(e.target.value as 'llamada' | 'visita')}>
+              <select value={tipoAgenda} onChange={(e) => { const t = e.target.value as TipoTurno; setTipoAgenda(t); if (t === 'test_drive' && !HORAS_TURNO.includes(horaAgenda)) setHoraAgenda(HORAS_TURNO[0]); }}>
                 <option value="llamada">Llamada</option>
                 <option value="visita">Visita</option>
+                <option value="test_drive">Test drive</option>
               </select>
             </div>
+            {tipoAgenda === 'test_drive' && (
+              <div className="fld" style={{ marginBottom: 9 }}>
+                <label>Vehículo</label>
+                <select value={vehiculo} onChange={(e) => setVehiculo(e.target.value)}>{modelos.map((m) => <option key={m}>{m}</option>)}</select>
+              </div>
+            )}
             <div className="form-grid" style={{ marginBottom: 10 }}>
               <div className="fld"><label>Fecha</label><input type="date" value={fechaAgenda} onChange={(e) => setFechaAgenda(e.target.value)} required /></div>
-              <div className="fld"><label>Hora</label><input type="time" value={horaAgenda} onChange={(e) => setHoraAgenda(e.target.value)} required /></div>
+              <div className="fld"><label>Hora</label>
+                {tipoAgenda === 'test_drive'
+                  ? <select value={horaAgenda} onChange={(e) => setHoraAgenda(e.target.value)}>{HORAS_TURNO.map((h) => <option key={h}>{h}</option>)}</select>
+                  : <input type="time" value={horaAgenda} onChange={(e) => setHoraAgenda(e.target.value)} required />}
+              </div>
             </div>
-            <button className="alert-btn" style={{ width: '100%' }} disabled={agenda.pendiente}>Agendar</button>
+            <p className="dcard-sub" style={{ margin: '0 0 8px' }}>
+              {tipoAgenda === 'test_drive' ? `En la sucursal del lead. Queda pendiente de aprobación; la alerta se crea cuando se aprueba.` : 'Se crea una alerta para ese día.'}
+            </p>
+            <button className="alert-btn" style={{ width: '100%' }} disabled={agenda.pendiente}>{tipoAgenda === 'test_drive' ? 'Solicitar test drive' : 'Agendar'}</button>
           </form>
         )}
         <Toast resultado={agenda.resultado} />
-        <p className="dcard-sub" style={{ margin: '8px 0 0' }}>Los test drive se piden desde la sección Test drive.</p>
       </div>
       <div className="detail-block">
         <p className="detail-label">Recordatorios de este lead</p>

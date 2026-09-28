@@ -1,7 +1,7 @@
 import 'server-only';
 import { crearClienteServidor } from './supabase/server';
 import { TRAMOS_SEGUIMIENTO, ordenEtapa, ordenFinal } from './constantes';
-import { diasDesde, instanteLocal, msHaceDias } from './fechas';
+import { diasDesde, fechaLocal, fechaMasDias, instanteLocal, msHaceDias } from './fechas';
 import { COLUMNAS_LEAD_PANEL, type Agenda, type LeadPanel } from './panel';
 import type { Alerta, EtapaPipeline, Etiqueta, Horario, LeadBandeja, Mensaje, Nota, Sucursal, Turno, Usuario, Venta } from './tipos';
 
@@ -108,6 +108,25 @@ export async function listarTurnos(filtros: { desde?: string } = {}): Promise<Tu
   return (data ?? []) as Turno[];
 }
 
+/** Agendamientos desde una fecha: los test drive de todos (para ver la disponibilidad) y las llamadas y visitas propias. */
+export async function listarAgendamientos(filtros: { desde: string; vendedorId: number }): Promise<Turno[]> {
+  const supabase = await crearClienteServidor();
+  const { data } = await supabase.from('turnos').select('*').gte('fecha_hora', filtros.desde)
+    .or(`tipo.eq.test_drive,vendedor_id.eq.${filtros.vendedorId}`).order('fecha_hora');
+  return (data ?? []) as Turno[];
+}
+
+export type AlertaHoy = Alerta & { turno: Pick<Turno, 'tipo' | 'estado'> | null };
+
+/** Alertas de hoy que todavía no se marcaron como hechas: las del aviso emergente y el ícono rojo de Agendamientos. */
+export async function alertasDeHoy(usuarioId: number): Promise<AlertaHoy[]> {
+  const supabase = await crearClienteServidor();
+  const hoy = fechaLocal();
+  const { data } = await supabase.from('alertas').select('*, turno:turnos(tipo, estado)').eq('usuario_id', usuarioId).eq('leida', false)
+    .gte('fecha_hora', instanteLocal(hoy, '00:00')).lt('fecha_hora', instanteLocal(fechaMasDias(hoy, 1), '00:00')).order('fecha_hora');
+  return (data ?? []) as AlertaHoy[];
+}
+
 /** Horarios de los vendedores desde una fecha 'YYYY-MM-DD'. */
 export async function listarHorarios(desde: string): Promise<Horario[]> {
   const supabase = await crearClienteServidor();
@@ -196,9 +215,10 @@ export async function cargarPanel(filtros: {
   } else if (filtros.sucursales) {
     ventas = ventas.or(`vendedor_id.eq.${filtros.yoId},sucursal_id.in.(${filtros.sucursales.join(',') || 0})`);
   }
-  // Agendas vigentes de los últimos 6 meses en adelante (las más viejas ya cuentan como "sin respuesta").
+  // Agendamientos vigentes de los últimos 6 meses en adelante (los más viejos ya cuentan como "sin respuesta").
+  // El test drive cuenta recién cuando está aprobado; las llamadas y visitas, mientras no se hayan hecho ni cancelado.
   const agendas = supabase.from('turnos').select('id, tipo, lead_id, fecha_hora, estado, vehiculo, vendedor_id')
-    .not('lead_id', 'is', null).in('estado', ['pendiente', 'aprobado']).gte('fecha_hora', new Date(msHaceDias(180)).toISOString()).order('fecha_hora');
+    .not('lead_id', 'is', null).or('and(tipo.eq.test_drive,estado.eq.aprobado),and(tipo.neq.test_drive,estado.eq.pendiente)').gte('fecha_hora', new Date(msHaceDias(180)).toISOString()).order('fecha_hora');
 
   const [a, c, v, t, etapas] = await Promise.all([abiertos, cerrados, ventas, agendas, listarEtapas()]);
   return {

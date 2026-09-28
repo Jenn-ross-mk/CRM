@@ -22,6 +22,10 @@ export async function solicitarTurno(fd: FormData): Promise<Resultado> {
     .in('estado', ['pendiente', 'aprobado']).limit(1);
   if (ocupado?.length) return error('Ese vehículo ya tiene un turno en ese horario. Elegí otro horario.');
 
+  // Si se pide desde un lead, el test drive (y su alerta) queda a nombre del vendedor del lead.
+  const leadId = Number(texto(fd, 'lead_id')) || null;
+  const { data: lead } = leadId ? await supabase.from('leads').select('vendedor_id').eq('id', leadId).maybeSingle() : { data: null };
+
   const { error: e } = await supabase.from('turnos').insert({
     tipo: 'test_drive',
     vehiculo,
@@ -29,13 +33,13 @@ export async function solicitarTurno(fd: FormData): Promise<Resultado> {
     cliente_telefono: texto(fd, 'telefono') || null,
     fecha_hora: fechaHora,
     sucursal_id: sucursalId,
-    vendedor_id: usuario.id,
-    lead_id: Number(texto(fd, 'lead_id')) || null,
+    vendedor_id: lead?.vendedor_id ?? usuario.id,
+    lead_id: leadId,
     estado: 'pendiente',
   });
   if (e) return error(e);
   refresh();
-  return ok('Turno solicitado — queda pendiente de aprobación del administrador.');
+  return ok('Test drive solicitado. Queda pendiente de aprobación; la alerta se crea cuando se aprueba.');
 }
 
 export async function cambiarEstadoTurno(id: number, estado: EstadoTurno): Promise<Resultado> {
@@ -72,7 +76,7 @@ export async function agendarContacto(leadId: number, datos: { tipo: string; fec
   });
   if (e) return error(e);
   refresh();
-  return ok(datos.tipo === 'llamada' ? 'Llamada agendada.' : 'Visita agendada.');
+  return ok(datos.tipo === 'llamada' ? 'Llamada agendada. Se creó la alerta para ese día.' : 'Visita agendada. Se creó la alerta para ese día.');
 }
 
 /** Marca como realizada ('hecho') o cancela ('rechazado') una llamada o visita. */

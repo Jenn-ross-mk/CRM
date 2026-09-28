@@ -20,20 +20,21 @@ Los leads se ordenan en cuatro bloques. El administrador ve todos, el supervisor
 
 - **Cerrar chat**: desde la conversación o desde el desplegable de cada lead del panel. El motivo es obligatorio y la base lo vuelve a controlar. El chat deja de verse en la bandeja y en Mensajes; el administrador o el supervisor lo pueden reabrir.
 - **Reapertura automática**: si el cliente de un chat cerrado vuelve a escribir, la base lo reabre sola, con el mismo vendedor (o para asignación manual si ese vendedor está dado de baja) y con toda la conversación anterior. n8n tiene que guardar el mensaje en el lead que ya existe para ese contacto, sin crear uno nuevo.
-- **Agendar llamada o visita**: desde la pestaña *Recordatorios* del chat. Se marca como realizada o se cancela desde el mismo lugar. Los test drive se siguen pidiendo desde *Test drive*.
-- Comunicados, giras y entregas (el panel anterior) pasaron a **Comunicados**.
+- **Agendamientos** (antes *Test drive*): test drive, llamada o visita. El test drive necesita aprobación; las llamadas y visitas no. También se agendan desde la pestaña *Recordatorios* del chat.
+- **Alertas de agendamientos**: cada agendamiento crea una alerta para ese día (el test drive, cuando se aprueba). Ese día aparece un aviso al entrar al CRM y un ícono rojo en *Agendamientos* hasta marcarlas como resueltas. Si se cancela o se rechaza, la alerta se borra sola.
+- Comunicados y giras (el panel anterior) pasaron a **Comunicados**. La sección *Entregas de la semana* se quitó.
 
 ### Pantallas
 
 | Vendedor | Supervisor / Administrador |
 | --- | --- |
-| **Inicio**: giras, comunicados, entregas, ranking del mes y *Mis alertas* con calendario | **Mensajes**: todas las conversaciones (el supervisor, las de sus sucursales), filtro por vendedor, asignar/reasignar |
+| **Inicio**: giras, comunicados, ranking del mes y *Mis alertas* con calendario | **Mensajes**: todas las conversaciones (el supervisor, las de sus sucursales), filtro por vendedor, asignar/reasignar |
 | **Bandeja**: conversaciones propias, chat, notas, etiquetas, datos del lead, checklist de etapas, recordatorios | **Pipeline**: embudos por sector, estancados, cuello de botella (calculados en vivo) |
-| **Test drive**: calendario de turnos por sucursal y solicitud (queda pendiente de aprobación) | **Seguimiento**: leads sin contacto de 1 semana a 18 meses, envío de plantilla |
+| **Agendamientos**: test drives (con aprobación), llamadas y visitas en un calendario; cada uno genera su alerta | **Seguimiento**: leads sin contacto de 1 semana a 18 meses, envío de plantilla |
 | **Seguimiento**: cartera propia sin contacto y envío de plantilla | **Ranking** con filtros y detalle de ventas por vendedor |
-| **Ranking** mensual con podio | **Test drives**: aprobar, rechazar, marcar realizado |
+| **Ranking** mensual con podio | **Test drives**: aprobar (recién ahí se crea la alerta del vendedor), rechazar, marcar realizado |
 | | **Ventas**: listado filtrable, detalle, campos adicionales, alta manual |
-| | **Panel general**: comunicados, giras y entregas |
+| | **Comunicados**: comunicados y giras |
 | | **Vendedores**, **Horarios** y **Sucursales** (solo administrador): alta, edición, baja, horarios por fecha, reenvío de contraseña |
 
 Otros comportamientos:
@@ -60,7 +61,7 @@ supabase/migrations/20260925000000_esquema_real.sql   Partes 1 a 5 (ya aplicadas
 supabase/migrations/20260925000100_parte6_crm.sql     Parte 6: vínculo con Auth, permisos (RLS), vista bandeja
 supabase/parte6/00..08_*.sql                           La Parte 6 en bloques chicos, para pegar en el SQL Editor
 supabase/migrations/20260928000000_parte7_panel.sql    Parte 7: Panel general, cierre de leads, llamadas y visitas
-supabase/parte7/01..05_*.sql                           La Parte 7 en bloques, para pegar en el SQL Editor
+supabase/parte7/01..06_*.sql                           La Parte 7 en bloques, para pegar en el SQL Editor
 ```
 
 En la **base de prueba** hay que correr los bloques de `supabase/parte6/` (si todavía no se corrieron) y después los de `supabase/parte7/`, en orden y de a uno (Supabase → SQL Editor → New query → Run). Cada archivo explica qué hace y qué resultado esperar. El Bloque 0 solo lee: sirve para confirmar los valores permitidos antes de cambiar nada.
@@ -94,7 +95,7 @@ supabase/migrations/     Esquema real + Parte 6
 supabase/parte6/         Parte 6 en bloques para el SQL Editor
 src/proxy.ts             Refresco de sesión y redirección a /login
 src/app/login, restablecer
-src/app/(app)/           Pantallas del vendedor (inicio, bandeja, test-drive, seguimiento, ranking)
+src/app/(app)/           Panel general y pantallas del vendedor (inicio, bandeja, agendamientos, seguimiento, ranking)
 src/app/(app)/gestion/   Consola de supervisor/administrador (incluye Horarios)
 src/app/acciones/        Server Actions (todas las escrituras)
 src/components/          Bandeja, calendario, ranking, seguimiento, UI común

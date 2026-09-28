@@ -129,6 +129,8 @@ export interface Alerta {
   fecha_hora: string;
   mensaje: string;
   leida: boolean;
+  /** Agendamiento que generó la alerta (test drive aprobado, llamada o visita). */
+  turno_id: number | null;
 }
 
 export interface Turno {

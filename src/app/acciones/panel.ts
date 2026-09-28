@@ -35,18 +35,6 @@ export async function agregarGira(datos: { destino: string; fecha: string; hora:
   return gestionar((sb) => sb.from('giras_plan_ahorro').insert({ destino, fecha_hora: instanteLocal(datos.fecha, datos.hora), unidades: datos.unidades.trim() || null }));
 }
 
-export async function agregarEntrega(datos: { vehiculo: string; cliente: string; fecha: string }): Promise<Resultado> {
-  const vehiculo = datos.vehiculo.trim();
-  const cliente = datos.cliente.trim();
-  if (!vehiculo || !cliente) return error('Completá el vehículo y el cliente.');
-  if (!esFecha(datos.fecha)) return error('Elegí la fecha de entrega.');
-  return gestionar((sb) => sb.from('entregas').insert({ vehiculo, cliente_nombre: cliente, fecha: datos.fecha }));
-}
-
-export async function marcarEntregada(id: number): Promise<Resultado> {
-  return gestionar((sb) => sb.from('entregas').update({ entregada: true }).eq('id', id));
-}
-
-export async function eliminarItemPanel(tabla: 'giras_plan_ahorro' | 'entregas', id: number): Promise<Resultado> {
+export async function eliminarItemPanel(tabla: 'giras_plan_ahorro', id: number): Promise<Resultado> {
   return gestionar((sb) => sb.from(tabla).delete().eq('id', id));
 }
