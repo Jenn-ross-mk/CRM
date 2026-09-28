@@ -20,7 +20,7 @@ Los leads se ordenan en cuatro bloques. El administrador ve todos, el supervisor
 
 - **Cerrar chat**: desde la conversación o desde el desplegable de cada lead del panel. El motivo es obligatorio y la base lo vuelve a controlar. El chat deja de verse en la bandeja y en Mensajes; el administrador o el supervisor lo pueden reabrir.
 - **Reapertura automática**: si el cliente de un chat cerrado vuelve a escribir, la base lo reabre sola, con el mismo vendedor (o para asignación manual si ese vendedor está dado de baja) y con toda la conversación anterior. n8n tiene que guardar el mensaje en el lead que ya existe para ese contacto, sin crear uno nuevo.
-- **Agendamientos** (antes *Test drive*): test drive, llamada o visita. El test drive necesita aprobación; las llamadas y visitas no. También se agendan desde la pestaña *Recordatorios* del chat.
+- **Agendamientos** (antes *Test drive*): un calendario con todo lo del vendedor. Se agenda una *nota libre* (qué hay que hacer ese día), un test drive, una llamada o una visita. El test drive necesita aprobación; lo demás no. La vista del día muestra todo junto, ordenado por hora, y abajo están los próximos días. Reemplaza a *Mis alertas* del Inicio. Llamadas, visitas y test drives también se agendan desde la pestaña *Recordatorios* del chat.
 - **Alertas de agendamientos**: cada agendamiento crea una alerta para ese día (el test drive, cuando se aprueba). Ese día aparece un aviso al entrar al CRM y un ícono rojo en *Agendamientos* hasta marcarlas como resueltas. Si se cancela o se rechaza, la alerta se borra sola.
 - Comunicados y giras (el panel anterior) pasaron a **Comunicados**. La sección *Entregas de la semana* se quitó.
 
@@ -28,9 +28,9 @@ Los leads se ordenan en cuatro bloques. El administrador ve todos, el supervisor
 
 | Vendedor | Supervisor / Administrador |
 | --- | --- |
-| **Inicio**: giras, comunicados, ranking del mes y *Mis alertas* con calendario | **Mensajes**: todas las conversaciones (el supervisor, las de sus sucursales), filtro por vendedor, asignar/reasignar |
+| **Inicio**: giras, comunicados y ranking del mes | **Mensajes**: todas las conversaciones (el supervisor, las de sus sucursales), filtro por vendedor, asignar/reasignar |
 | **Bandeja**: conversaciones propias, chat, notas, etiquetas, datos del lead, checklist de etapas, recordatorios | **Pipeline**: embudos por sector, estancados, cuello de botella (calculados en vivo) |
-| **Agendamientos**: test drives (con aprobación), llamadas y visitas en un calendario; cada uno genera su alerta | **Seguimiento**: leads sin contacto de 1 semana a 18 meses, envío de plantilla |
+| **Agendamientos**: calendario con notas libres, test drives (con aprobación), llamadas y visitas; todo genera su alerta | **Seguimiento**: leads sin contacto de 1 semana a 18 meses, envío de plantilla |
 | **Seguimiento**: cartera propia sin contacto y envío de plantilla | **Ranking** con filtros y detalle de ventas por vendedor |
 | **Ranking** mensual con podio | **Test drives**: aprobar (recién ahí se crea la alerta del vendedor), rechazar, marcar realizado |
 | | **Ventas**: listado filtrable, detalle, campos adicionales, alta manual |

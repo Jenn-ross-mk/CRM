@@ -502,6 +502,25 @@
   .tipo-agenda{display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;border-radius:4px;padding:2px 6px;margin-right:6px;vertical-align:1px;background:var(--navy-100);color:var(--navy-800);}
   .tipo-llamada{background:#E8F4EC;color:#1B5E38;}
   .tipo-visita{background:#FDF0E3;color:#8A4A08;}
+  .agenda-leyenda{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--silver-light);font-size:10.5px;font-weight:600;color:var(--slate);}
+  .agenda-leyenda span{display:inline-flex;align-items:center;gap:5px;}
+  .leyenda-color{display:inline-block;width:10px;height:10px;border-radius:3px;}
+  .tipo-nota{background:#EEEAF6;color:#4B3A7A;}
+  .leyenda-color.tipo-test_drive{background:var(--navy-600);}
+  .leyenda-color.tipo-llamada{background:#2E7D4F;}
+  .leyenda-color.tipo-visita{background:#D9730D;}
+  .leyenda-color.tipo-nota{background:#7A67B0;}
+  .agenda-renglon{display:flex;align-items:center;gap:10px;padding:9px 0 9px 10px;border-bottom:1px solid var(--silver-light);border-left:3px solid var(--navy-600);margin-bottom:2px;}
+  .agenda-renglon:last-child{border-bottom:none;}
+  .tipo-borde-llamada{border-left-color:#2E7D4F;}
+  .tipo-borde-visita{border-left-color:#D9730D;}
+  .tipo-borde-nota{border-left-color:#7A67B0;}
+  .agenda-grupo{display:flex;gap:14px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--silver-light);}
+  .agenda-grupo:last-child{border-bottom:none;}
+  .agenda-grupo-dia{flex-shrink:0;width:74px;text-align:left;border:none;background:var(--navy-50);border-radius:7px;padding:8px 9px;font-family:inherit;font-size:11.5px;font-weight:800;color:var(--navy-800);cursor:pointer;margin-top:4px;}
+  .agenda-grupo-dia:hover{background:var(--navy-100);}
+  .ocupados{font-size:11px;color:var(--slate);margin:12px 0 0;}
+  .boton-agendar{margin-top:14px;width:100%;justify-content:center;display:flex;}
   .aviso-fondo{position:fixed;inset:0;background:rgba(10,20,35,.45);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;}
   .aviso{background:var(--white);border-radius:14px;width:440px;max-width:100%;max-height:85vh;overflow:auto;box-shadow:0 20px 50px rgba(10,20,35,.25);border-top:4px solid #D93025;}
   .aviso-head{display:flex;gap:12px;padding:18px 20px 10px;}

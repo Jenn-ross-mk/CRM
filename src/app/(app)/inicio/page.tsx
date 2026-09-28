@@ -1,5 +1,5 @@
 import { crearClienteServidor } from '@/lib/supabase/server';
-import { listarAlertasPropias, listarSucursales, listarUsuarios, listarVentas, rangoMes } from '@/lib/datos';
+import { listarSucursales, listarUsuarios, listarVentas, rangoMes } from '@/lib/datos';
 import { mesClave, nombreMes } from '@/lib/fechas';
 import { calcularRanking } from '@/lib/ranking';
 import { exigirRol } from '@/lib/sesion';
@@ -7,14 +7,12 @@ import type { Comunicado, Gira, Sector } from '@/lib/tipos';
 import { Inicio } from './inicio';
 
 export default async function InicioPage() {
-  const { usuario, sucursal } = await exigirRol(['vendedor']);
+  const { sucursal } = await exigirRol(['vendedor']);
   const supabase = await crearClienteServidor();
   const mes = mesClave();
-  const [comunicados, giras, leads, alertas, ventas, usuarios, sucursales] = await Promise.all([
+  const [comunicados, giras, ventas, usuarios, sucursales] = await Promise.all([
     supabase.from('comunicados').select('*').eq('activo', true).order('creado_en', { ascending: false }),
     supabase.from('giras_plan_ahorro').select('*').gte('fecha_hora', new Date().toISOString()).order('fecha_hora'),
-    supabase.from('bandeja').select('id, nombre').eq('vendedor_id', usuario.id).order('nombre'),
-    listarAlertasPropias(usuario.id),
     listarVentas(rangoMes(mes)),
     listarUsuarios(),
     listarSucursales(),
@@ -31,8 +29,6 @@ export default async function InicioPage() {
       giras={(giras.data ?? []) as Gira[]}
       rankingConv={top('convencional')}
       rankingPlan={top('plan_ahorro')}
-      alertas={alertas}
-      leads={(leads.data ?? []) as { id: number; nombre: string }[]}
     />
   );
 }

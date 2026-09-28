@@ -1,32 +1,51 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { marcarAlertaHecha } from '@/app/acciones/alertas';
+import { crearAlerta, eliminarAlerta, marcarAlertaHecha } from '@/app/acciones/alertas';
 import { agendarContacto, cerrarAgenda, solicitarTurno } from '@/app/acciones/test-drives';
 import { Calendario } from '@/components/calendario';
 import { Toast, useAccion, Vacio } from '@/components/ui';
 import { ETIQUETA_TIPO_TURNO, HORAS_TURNO } from '@/lib/constantes';
-import type { AlertaHoy } from '@/lib/datos';
 import { fechaLocal, fechaTexto, fechaTurno, horaLocal, tituloDia } from '@/lib/fechas';
-import type { EstadoTurno, Sucursal, TipoTurno, Turno, Usuario } from '@/lib/tipos';
-
-const ESTADO: Record<EstadoTurno, { clase: string; texto: string }> = {
-  pendiente: { clase: 'status-pendiente', texto: 'Pendiente' },
-  aprobado: { clase: 'status-aprobado', texto: 'Aprobado' },
-  rechazado: { clase: 'status-pendiente', texto: 'Rechazado' },
-  hecho: { clase: 'status-hecho', texto: 'Realizado' },
-};
-/** Llamadas y visitas no se aprueban: mientras están "pendiente" están agendadas; "rechazado" es cancelada. */
-const estadoDe = (t: Turno) =>
-  t.tipo === 'test_drive' ? ESTADO[t.estado]
-    : t.estado === 'pendiente' ? { clase: 'status-aprobado', texto: 'Agendada' }
-    : t.estado === 'rechazado' ? { clase: 'status-pendiente', texto: 'Cancelada' } : ESTADO.hecho;
+import type { Alerta, Resultado, Sucursal, TipoTurno, Turno, Usuario } from '@/lib/tipos';
 
 type Lead = { id: number; nombre: string; telefono: string | null };
+type Tipo = TipoTurno | 'nota';
 
-export function Agendamientos({ turnos, alertasHoy, sucursales, modelos, leads, yo }: {
+const ETIQUETA: Record<Tipo, string> = { nota: 'Nota', ...ETIQUETA_TIPO_TURNO };
+const TIPOS_FORM: { valor: Tipo; etiqueta: string }[] = [
+  { valor: 'nota', etiqueta: 'Nota libre' },
+  { valor: 'test_drive', etiqueta: 'Test drive' },
+  { valor: 'llamada', etiqueta: 'Llamada' },
+  { valor: 'visita', etiqueta: 'Visita' },
+];
+
+/** Un renglón de la agenda: un agendamiento (test drive, llamada, visita) o una nota libre. */
+interface Item {
+  clave: string;
+  fechaHora: string;
+  tipo: Tipo;
+  titulo: string;
+  detalle: string | null;
+  estado: { clase: string; texto: string } | null;
+  /** Alerta sin resolver de ese renglón (la que cuenta en el ícono rojo cuando es de hoy). */
+  alertaPendiente: Alerta | null;
+  turno: Turno | null;
+  nota: Alerta | null;
+}
+
+function estadoTurno(t: Turno): Item['estado'] {
+  if (t.tipo === 'test_drive') {
+    return t.estado === 'aprobado' ? { clase: 'status-aprobado', texto: 'Aprobado' }
+      : t.estado === 'hecho' ? { clase: 'status-hecho', texto: 'Realizado' }
+      : { clase: 'status-pendiente', texto: 'Pendiente de aprobación' };
+  }
+  return t.estado === 'hecho' ? { clase: 'status-hecho', texto: 'Realizada' } : { clase: 'status-aprobado', texto: 'Agendada' };
+}
+
+export function Agendamientos({ turnos, alertas, sucursales, modelos, leads, yo }: {
   turnos: Turno[];
-  alertasHoy: AlertaHoy[];
+  alertas: Alerta[];
   sucursales: Sucursal[];
   modelos: string[];
   leads: Lead[];
@@ -35,78 +54,161 @@ export function Agendamientos({ turnos, alertasHoy, sucursales, modelos, leads, 
   const hoy = fechaLocal();
   const [mes, setMes] = useState(hoy.slice(0, 7));
   const [dia, setDia] = useState(hoy);
-  const [tipo, setTipo] = useState<TipoTurno>('test_drive');
-  const [sucursalId, setSucursalId] = useState(String(yo.sucursal_id ?? sucursales[0]?.id ?? ''));
+  const [tipo, setTipo] = useState<Tipo>('nota');
   const accion = useAccion();
+  const nombreLead = useMemo(() => new Map(leads.map((l) => [l.id, l.nombre])), [leads]);
 
-  // Test drives de la sucursal elegida (de todos, para ver qué horarios están tomados) + mis llamadas y visitas.
-  const visibles = useMemo(() => turnos.filter((t) => t.estado !== 'rechazado' &&
-    (t.tipo === 'test_drive' ? String(t.sucursal_id) === sucursalId : t.vendedor_id === yo.id)), [turnos, sucursalId, yo.id]);
-  const delDia = visibles.filter((t) => fechaLocal(t.fecha_hora) === dia);
-  const misProximos = turnos.filter((t) => t.vendedor_id === yo.id && fechaLocal(t.fecha_hora) >= hoy);
-  const nombreSucursal = sucursales.find((s) => String(s.id) === sucursalId)?.nombre ?? '—';
+  // Todo lo propio en una sola lista: agendamientos vigentes y notas libres (las alertas que no nacen de un agendamiento).
+  const items = useMemo<Item[]>(() => {
+    const porTurno = new Map(alertas.filter((a) => a.turno_id).map((a) => [a.turno_id!, a]));
+    const deTurnos = turnos.filter((t) => t.vendedor_id === yo.id && t.estado !== 'rechazado').map((t): Item => {
+      const alerta = porTurno.get(t.id);
+      return {
+        clave: `t${t.id}`, fechaHora: t.fecha_hora, tipo: t.tipo, turno: t, nota: null,
+        titulo: t.tipo === 'test_drive' ? `${t.vehiculo ?? 'Test drive'} · ${t.cliente_nombre}` : t.cliente_nombre,
+        detalle: t.tipo === 'test_drive' ? `Sucursal ${sucursales.find((s) => s.id === t.sucursal_id)?.nombre ?? '—'}` : null,
+        estado: estadoTurno(t),
+        alertaPendiente: alerta && !alerta.leida ? alerta : null,
+      };
+    });
+    const notas = alertas.filter((a) => !a.turno_id).map((a): Item => ({
+      clave: `a${a.id}`, fechaHora: a.fecha_hora, tipo: 'nota', turno: null, nota: a,
+      titulo: a.mensaje,
+      detalle: a.lead_id ? nombreLead.get(a.lead_id) ?? 'Lead' : null,
+      estado: a.leida ? { clase: 'status-hecho', texto: 'Hecha' } : null,
+      alertaPendiente: a.leida ? null : a,
+    }));
+    return [...deTurnos, ...notas].sort((x, y) => x.fechaHora.localeCompare(y.fechaHora));
+  }, [turnos, alertas, yo.id, sucursales, nombreLead]);
+
+  const delDia = items.filter((i) => fechaLocal(i.fechaHora) === dia);
+  const pendientesHoy = items.filter((i) => fechaLocal(i.fechaHora) === hoy && i.alertaPendiente).length;
+  const proximos = items.filter((i) => fechaLocal(i.fechaHora) > hoy);
+  const proximosPorDia = proximos.reduce<Map<string, Item[]>>((m, i) => m.set(fechaLocal(i.fechaHora), [...(m.get(fechaLocal(i.fechaHora)) ?? []), i]), new Map());
+  const esHoy = dia === hoy;
 
   return (
     <div className="dash">
-      {alertasHoy.length > 0 && <AlertasHoy alertas={alertasHoy} />}
       <div className="td-grid">
         <div className="dcard">
-          <Calendario mes={mes} seleccionado={dia} conEventos={new Set(visibles.map((t) => fechaLocal(t.fecha_hora)))} onSeleccionar={setDia} onCambiarMes={setMes} />
-          <div className="fld" style={{ marginTop: 14 }}>
-            <label>Sucursal (test drives)</label>
-            <select value={sucursalId} onChange={(e) => setSucursalId(e.target.value)}>
-              {sucursales.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-            </select>
+          <Calendario mes={mes} seleccionado={dia} conEventos={new Set(items.map((i) => fechaLocal(i.fechaHora)))} onSeleccionar={setDia} onCambiarMes={setMes} />
+          <div className="agenda-leyenda">
+            {(['nota', 'test_drive', 'llamada', 'visita'] as Tipo[]).map((t) => (
+              <span key={t}><i className={`leyenda-color tipo-${t}`} />{ETIQUETA[t]}</span>
+            ))}
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <div className="dcard">
-            <h3>Agenda · {tituloDia(dia)}</h3>
-            <p className="dcard-sub">Test drives de la sucursal {nombreSucursal} y tus llamadas y visitas</p>
-            {delDia.length ? delDia.map((t) => (
-              <div key={t.id} className="slot-row">
-                <div className="slot-time">{horaLocal(t.fecha_hora)}</div>
-                <div style={{ flex: 1 }}>
-                  <div className="slot-veh"><span className={`tipo-agenda tipo-${t.tipo}`}>{ETIQUETA_TIPO_TURNO[t.tipo]}</span>{t.tipo === 'test_drive' ? t.vehiculo : t.cliente_nombre}</div>
-                  {t.tipo === 'test_drive' && <div className="slot-cli">{t.cliente_nombre}</div>}
-                </div>
-                <span className={`status-pill ${estadoDe(t).clase}`}>{estadoDe(t).texto}</span>
-              </div>
-            )) : <div className="empty-slots">Nada agendado este día.</div>}
-          </div>
 
-          <div className="dcard">
-            <h3>Nuevo agendamiento</h3>
-            <div className="rank-toggle" style={{ margin: '4px 0 12px' }} role="radiogroup" aria-label="Tipo de agendamiento">
-              {(['test_drive', 'llamada', 'visita'] as TipoTurno[]).map((t) => (
-                <div key={t} role="radio" aria-checked={tipo === t} tabIndex={0} className={`rtog${tipo === t ? ' active' : ''}`}
-                  onClick={() => { setTipo(t); accion.limpiar(); }} onKeyDown={(e) => e.key === 'Enter' && setTipo(t)}>{ETIQUETA_TIPO_TURNO[t]}</div>
-              ))}
-            </div>
-            {tipo === 'test_drive'
-              ? <FormTestDrive dia={dia} hoy={hoy} sucursalId={sucursalId} setSucursalId={setSucursalId} sucursales={sucursales} modelos={modelos} leads={leads} accion={accion} />
-              : <FormContacto key={tipo} tipo={tipo} dia={dia} hoy={hoy} leads={leads} accion={accion} />}
-          </div>
+        <div className="dcard">
+          <h3>
+            {esHoy && pendientesHoy > 0 && <span className="punto-rojo" aria-hidden="true" />}
+            {esHoy ? 'Hoy' : 'Tu día'} · {tituloDia(dia)}
+          </h3>
+          <p className="dcard-sub">
+            {esHoy
+              ? pendientesHoy ? `${pendientesHoy} sin resolver. Marcalos con "Listo": el ícono rojo de la pestaña se apaga cuando no queda ninguno.` : 'Todo lo de hoy está resuelto.'
+              : 'Todo lo que tenés ese día, ordenado por hora.'}
+          </p>
+          {delDia.length ? delDia.map((i) => <Renglon key={i.clave} item={i} hoy={hoy} />) : <div className="empty-slots">Nada para este día. Agregá una nota o un agendamiento abajo.</div>}
         </div>
       </div>
 
       <div className="dcard" style={{ marginTop: 18 }}>
-        <h3>Mis próximos agendamientos</h3>
-        <p className="dcard-sub">Cada uno genera una alerta para ese día (el test drive, cuando se aprueba)</p>
-        {misProximos.length ? misProximos.map((t) => <FilaAgendamiento key={t.id} t={t} sucursales={sucursales} />) : <Vacio>No tenés agendamientos próximos.</Vacio>}
+        <h3>Agregar al {tituloDia(dia)}</h3>
+        <p className="dcard-sub">Elegí el día en el calendario y qué querés agendar. Todo genera una alerta para ese día.</p>
+        <div className="rank-toggle" style={{ margin: '0 0 14px' }} role="radiogroup" aria-label="Qué agendar">
+          {TIPOS_FORM.map((t) => (
+            <div key={t.valor} role="radio" aria-checked={tipo === t.valor} tabIndex={0} className={`rtog${tipo === t.valor ? ' active' : ''}`}
+              onClick={() => { setTipo(t.valor); accion.limpiar(); }} onKeyDown={(e) => e.key === 'Enter' && setTipo(t.valor)}>{t.etiqueta}</div>
+          ))}
+        </div>
+        {dia < hoy ? <Vacio>Elegí un día a partir de hoy para agendar.</Vacio>
+          : tipo === 'nota' ? <FormNota dia={dia} leads={leads} accion={accion} />
+          : tipo === 'test_drive' ? <FormTestDrive dia={dia} turnos={turnos} yo={yo} sucursales={sucursales} modelos={modelos} leads={leads} accion={accion} />
+          : <FormContacto key={tipo} tipo={tipo} dia={dia} leads={leads} accion={accion} />}
       </div>
+
+      <div className="dcard" style={{ marginTop: 18 }}>
+        <h3>Próximos</h3>
+        <p className="dcard-sub">Lo que tenés agendado a partir de mañana, día por día</p>
+        {proximos.length ? [...proximosPorDia].map(([d, lista]) => (
+          <div key={d} className="agenda-grupo">
+            <button className="agenda-grupo-dia" onClick={() => { setDia(d); setMes(d.slice(0, 7)); }}>{fechaTurno(d)}</button>
+            <div style={{ flex: 1, minWidth: 0 }}>{lista.map((i) => <Renglon key={i.clave} item={i} hoy={hoy} />)}</div>
+          </div>
+        )) : <Vacio>No tenés nada agendado para los próximos días.</Vacio>}
+      </div>
+    </div>
+  );
+}
+
+function Renglon({ item, hoy }: { item: Item; hoy: string }) {
+  const accion = useAccion();
+  const { turno, nota, alertaPendiente } = item;
+  const esContacto = turno && turno.tipo !== 'test_drive' && turno.estado === 'pendiente';
+  const esDeHoy = fechaLocal(item.fechaHora) === hoy;
+  // "Listo": la llamada o visita queda realizada; el test drive o la nota, como alerta resuelta.
+  const listo = (): Promise<Resultado> => (esContacto ? cerrarAgenda(turno.id, 'hecho') : marcarAlertaHecha(alertaPendiente!.id));
+
+  return (
+    <div className={`agenda-renglon tipo-borde-${item.tipo}`}>
+      <div className="slot-time">{horaLocal(item.fechaHora)}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="slot-veh"><span className={`tipo-agenda tipo-${item.tipo}`}>{ETIQUETA[item.tipo]}</span>{item.titulo}</div>
+        {item.detalle && <div className="slot-cli">{item.detalle}</div>}
+        {(esContacto || nota) && !esDeHoy && (
+          <div style={{ display: 'flex', gap: 12, marginTop: 3 }}>
+            {esContacto && <button className="btn-link" style={{ fontSize: 10.5, color: 'var(--slate)' }} disabled={accion.pendiente} onClick={() => accion.ejecutar(() => cerrarAgenda(turno.id, 'rechazado'))}>Cancelar</button>}
+            {nota && <button className="btn-link" style={{ fontSize: 10.5, color: 'var(--slate)' }} disabled={accion.pendiente} onClick={() => accion.ejecutar(() => eliminarAlerta(nota.id))}>Borrar</button>}
+          </div>
+        )}
+        <Toast resultado={accion.resultado?.ok ? null : accion.resultado} />
+      </div>
+      {esDeHoy && alertaPendiente
+        ? <button className="mini-btn mini-btn-approve" disabled={accion.pendiente} onClick={() => accion.ejecutar(listo)}>Listo</button>
+        : item.estado && <span className={`status-pill ${item.estado.clase}`}>{item.estado.texto}</span>}
     </div>
   );
 }
 
 type Accion = ReturnType<typeof useAccion>;
 
-function FormTestDrive({ dia, hoy, sucursalId, setSucursalId, sucursales, modelos, leads, accion }: {
-  dia: string; hoy: string; sucursalId: string; setSucursalId: (v: string) => void; sucursales: Sucursal[]; modelos: string[]; leads: Lead[]; accion: Accion;
+function FormNota({ dia, leads, accion }: { dia: string; leads: Lead[]; accion: Accion }) {
+  const [mensaje, setMensaje] = useState('');
+  const [hora, setHora] = useState('09:00');
+  const [leadId, setLeadId] = useState('');
+  return (
+    <form onSubmit={(e) => {
+      e.preventDefault();
+      accion.ejecutar(() => crearAlerta({ fecha: dia, hora, mensaje, leadId: Number(leadId) || null }), (r) => { if (r.ok) { setMensaje(''); setLeadId(''); } });
+    }}>
+      <div className="form-grid">
+        <div className="fld" style={{ gridColumn: '1/-1' }}><label>¿Qué tenés que hacer?</label>
+          <input value={mensaje} onChange={(e) => setMensaje(e.target.value)} placeholder="Ej: preparar la documentación de la entrega" required />
+        </div>
+        <div className="fld"><label>Hora</label><input type="time" value={hora} onChange={(e) => setHora(e.target.value)} required /></div>
+        <div className="fld"><label>Lead (opcional)</label>
+          <select value={leadId} onChange={(e) => setLeadId(e.target.value)}>
+            <option value="">Sin lead asociado</option>
+            {leads.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
+          </select>
+        </div>
+      </div>
+      <button className="send-btn boton-agendar" disabled={accion.pendiente || !mensaje.trim()}>{accion.pendiente ? 'Guardando…' : 'Guardar nota'}</button>
+      <Toast resultado={accion.resultado?.ok ? { ok: true, mensaje: 'Nota guardada. Te va a aparecer como alerta ese día.' } : accion.resultado} />
+    </form>
+  );
+}
+
+function FormTestDrive({ dia, turnos, yo, sucursales, modelos, leads, accion }: {
+  dia: string; turnos: Turno[]; yo: Usuario; sucursales: Sucursal[]; modelos: string[]; leads: Lead[]; accion: Accion;
 }) {
+  const [sucursalId, setSucursalId] = useState(String(yo.sucursal_id ?? sucursales[0]?.id ?? ''));
   const [cliente, setCliente] = useState('');
   const [telefono, setTelefono] = useState('');
   const [leadId, setLeadId] = useState('');
+  // Turnos ya tomados ese día en la sucursal (de cualquier vendedor), para no pedir un horario ocupado.
+  const ocupados = turnos.filter((t) => t.tipo === 'test_drive' && t.estado !== 'rechazado' && String(t.sucursal_id) === sucursalId && fechaLocal(t.fecha_hora) === dia);
   const elegirLead = (id: string) => {
     setLeadId(id);
     const l = leads.find((x) => String(x.id) === id);
@@ -135,15 +237,18 @@ function FormTestDrive({ dia, hoy, sucursalId, setSucursalId, sucursales, modelo
         <div className="fld"><label>Fecha</label><input readOnly value={fechaTexto(dia)} /></div>
         <div className="fld"><label>Hora</label><select name="hora">{HORAS_TURNO.map((h) => <option key={h}>{h}</option>)}</select></div>
       </div>
-      <button className="send-btn" style={{ marginTop: 14, width: '100%', justifyContent: 'center', display: 'flex' }} disabled={accion.pendiente || dia < hoy}>
-        {dia < hoy ? 'Elegí un día a partir de hoy' : accion.pendiente ? 'Solicitando…' : 'Solicitar test drive'}
-      </button>
+      <p className="ocupados">
+        {ocupados.length
+          ? <>Ya reservados ese día en la sucursal: {ocupados.map((t) => `${horaLocal(t.fecha_hora)} ${t.vehiculo ?? ''}`.trim()).join(' · ')}</>
+          : 'No hay test drives reservados ese día en la sucursal.'}
+      </p>
+      <button className="send-btn boton-agendar" disabled={accion.pendiente}>{accion.pendiente ? 'Solicitando…' : 'Solicitar test drive'}</button>
       <Toast resultado={accion.resultado} />
     </form>
   );
 }
 
-function FormContacto({ tipo, dia, hoy, leads, accion }: { tipo: TipoTurno; dia: string; hoy: string; leads: Lead[]; accion: Accion }) {
+function FormContacto({ tipo, dia, leads, accion }: { tipo: TipoTurno; dia: string; leads: Lead[]; accion: Accion }) {
   const [leadId, setLeadId] = useState('');
   const [hora, setHora] = useState('10:00');
   return (
@@ -162,54 +267,10 @@ function FormContacto({ tipo, dia, hoy, leads, accion }: { tipo: TipoTurno; dia:
         <div className="fld"><label>Fecha</label><input readOnly value={fechaTexto(dia)} /></div>
         <div className="fld"><label>Hora</label><input type="time" value={hora} onChange={(e) => setHora(e.target.value)} required /></div>
       </div>
-      <button className="send-btn" style={{ marginTop: 14, width: '100%', justifyContent: 'center', display: 'flex' }} disabled={accion.pendiente || dia < hoy || !leadId}>
-        {dia < hoy ? 'Elegí un día a partir de hoy' : accion.pendiente ? 'Agendando…' : `Agendar ${ETIQUETA_TIPO_TURNO[tipo].toLowerCase()}`}
+      <button className="send-btn boton-agendar" disabled={accion.pendiente || !leadId}>
+        {accion.pendiente ? 'Agendando…' : `Agendar ${ETIQUETA_TIPO_TURNO[tipo].toLowerCase()}`}
       </button>
       <Toast resultado={accion.resultado} />
     </form>
-  );
-}
-
-function FilaAgendamiento({ t, sucursales }: { t: Turno; sucursales: Sucursal[] }) {
-  const marcar = useAccion();
-  const estado = estadoDe(t);
-  const detalle = t.tipo === 'test_drive' ? ` · Sucursal ${sucursales.find((s) => s.id === t.sucursal_id)?.nombre ?? '—'}` : '';
-  return (
-    <div className="td-req-row">
-      <div className="td-req-date">{fechaTurno(fechaLocal(t.fecha_hora))}</div>
-      <div className="td-req-info">
-        <div className="td-req-veh"><span className={`tipo-agenda tipo-${t.tipo}`}>{ETIQUETA_TIPO_TURNO[t.tipo]}</span>{t.tipo === 'test_drive' ? `${t.vehiculo} · ` : ''}{t.cliente_nombre}</div>
-        <div className="td-req-sub">{horaLocal(t.fecha_hora)}{detalle}</div>
-        {t.tipo !== 'test_drive' && t.estado === 'pendiente' && (
-          <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
-            <button className="btn-link" style={{ fontSize: 10.5 }} disabled={marcar.pendiente} onClick={() => marcar.ejecutar(() => cerrarAgenda(t.id, 'hecho'))}>Marcar realizada</button>
-            <button className="btn-link" style={{ fontSize: 10.5, color: 'var(--slate)' }} disabled={marcar.pendiente} onClick={() => marcar.ejecutar(() => cerrarAgenda(t.id, 'rechazado'))}>Cancelar</button>
-          </div>
-        )}
-        <Toast resultado={marcar.resultado?.ok ? null : marcar.resultado} />
-      </div>
-      <span className={`status-pill ${estado.clase}`}>{estado.texto}</span>
-    </div>
-  );
-}
-
-/** Alertas de hoy sin resolver: lo mismo que cuenta el ícono rojo de la pestaña. */
-function AlertasHoy({ alertas }: { alertas: AlertaHoy[] }) {
-  const accion = useAccion();
-  const listo = (a: AlertaHoy) =>
-    a.turno_id && a.turno && a.turno.tipo !== 'test_drive' ? cerrarAgenda(a.turno_id, 'hecho') : marcarAlertaHecha(a.id);
-  return (
-    <div className="dcard alertas-hoy" style={{ marginBottom: 18 }}>
-      <h3><span className="punto-rojo" aria-hidden="true" />Para hoy · {alertas.length}</h3>
-      <p className="dcard-sub">Marcalas cuando las resuelvas: el ícono rojo de la pestaña se apaga cuando no queda ninguna.</p>
-      {alertas.map((a) => (
-        <div key={a.id} className="slot-row">
-          <div className="slot-time">{horaLocal(a.fecha_hora)}</div>
-          <div style={{ flex: 1 }}><div className="slot-veh">{a.mensaje}</div></div>
-          <button className="mini-btn mini-btn-approve" disabled={accion.pendiente} onClick={() => accion.ejecutar(() => listo(a))}>Listo</button>
-        </div>
-      ))}
-      <Toast resultado={accion.resultado?.ok ? null : accion.resultado} />
-    </div>
   );
 }
