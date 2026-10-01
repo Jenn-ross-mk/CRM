@@ -93,9 +93,9 @@ https://claude.ai/artifact/NvxiC3qC3ysyLCL98LiBZV
 - `supabase/tests/parte9_bot_test.sql`: 35 pruebas. Todas pasan en una copia local del CRM (Postgres 16 con las migraciones 1 a 9).
 
 - `supabase/migrations/20261002000000_parte10_archivos.sql` (Parte 10): carpeta privada "mensajes" en Supabase Storage para las fotos, audios y PDF de los clientes. Cada usuario abre solo los archivos de los mensajes que puede ver. n8n sube con service_role y guarda la ruta en `mensajes.media_url`. Prueba: `supabase/tests/parte10_archivos_test.sql`. **Ya se ejecutó en el Supabase del CRM de prueba ("Success").**
-  - Mensajes del CRM ya muestra esos archivos (foto en miniatura, audio para escuchar, documento con enlace) con un enlace temporal. **Falta publicar esa versión del CRM.**
+  - Mensajes del CRM ya muestra esos archivos (foto en miniatura, audio para escuchar, documento con enlace) con un enlace temporal. Publicado.
 
-- `supabase/migrations/20261003000000_parte11_juntar_mensajes.sql` (Parte 11): **Redis no se usa**. Decisión de la usuaria: el bot junta los mensajes seguidos usando el CRM. Después de esperar 30 s, `bot_mensajes_pendientes(lead, mensaje)` dice si es el último mensaje del cliente y devuelve todos los mensajes sin contestar juntos (y el modo, por si lo derivaron durante la espera). `bot_guardar_transcripcion` guarda la descripción de fotos / transcripción de audios en la tabla `mensaje_transcripciones`, **solo para el bot** (decisión de la usuaria: los vendedores no la ven). Prueba: `supabase/tests/parte11_juntar_mensajes_test.sql`.
+- `supabase/migrations/20261003000000_parte11_juntar_mensajes.sql` (Parte 11): **Redis no se usa**. Decisión de la usuaria: el bot junta los mensajes seguidos usando el CRM. Después de esperar 30 s, `bot_mensajes_pendientes(lead, mensaje)` dice si es el último mensaje del cliente y devuelve todos los mensajes sin contestar juntos (y el modo, por si lo derivaron durante la espera). `bot_guardar_transcripcion` guarda la descripción de fotos / transcripción de audios en la tabla `mensaje_transcripciones`, **solo para el bot** (decisión de la usuaria: los vendedores no la ven). Prueba: `supabase/tests/parte11_juntar_mensajes_test.sql`. **Ya se ejecutó en Supabase ("Success").**
 
 ## Próximos pasos (en orden)
 
