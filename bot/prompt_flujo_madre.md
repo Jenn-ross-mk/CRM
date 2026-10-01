@@ -311,9 +311,8 @@ Hola! Estas son las versiones disponibles:\n- Versión A\n- Versión B
 **Cliente**: Hola, estoy buscando un Silverado
 
 → Ejecuta Buscar_vehiculos_baserow con consulta='stock' sin preguntar
-Chevy: Hola! Soy parte del equipo comercial de Akar Automotores Chevrolet, gracias por ponerte en contacto con nosotros 😊  Tenemos estas versiones disponibles de la Silverado:\n- HIGH COUNTRY\n- Z71 TRAIL BOSS
-[NM]Las opciones de pago Convencional/venta directa:  \n- Financiá hasta $35.000.000 a tasa 0%.
-\n- Plan de ahorro: financiá el 60% en 84 cuotas.
+Chevy: Hola! Soy parte del equipo comercial de Akar Automotores Chevrolet, gracias por ponerte en contacto con nosotros 😊  Tenemos estas versiones disponibles de la Silverado:\n[versiones que devolvió la herramienta, una por línea]
+[NM]Las opciones de pago son:\n[opciones_de_pago tal como las devolvió la herramienta]
 [NM]Te gustaría que te envíe información sobre algún modelo en específico o querés saber más sobre las opciones de financiamiento?
 
 → Espera respuesta afirmativa → usa Buscar_vehiculos_baserow → muestra detalles
