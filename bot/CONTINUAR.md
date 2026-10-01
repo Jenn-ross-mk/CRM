@@ -6,6 +6,7 @@ de Akar en n8n, conectado a este CRM. **Una sesión nueva debe leer esto antes d
 ## Cómo trabajar con la usuaria (muy importante)
 
 - **Ella arma el bot con sus manos en n8n.** Claude NO arma archivos para importar: la guía clic por clic, un paso por mensaje, y espera que ella le diga que lo hizo.
+- **Todo código (SQL, expresiones, etc.) se pega completo en el chat.** Nunca mandarla a copiar archivos de GitHub ni de otro lado.
 - Ella **no es técnica**. Explicar todo en palabras simples, **de a un paso**, y esperar su respuesta.
 - **No decidir nada por cuenta propia** ni crear, subir o borrar cosas sin explicar antes y tener su OK.
 - **No inventar.** Si algo no se puede comprobar o no funciona, decirlo claramente en vez de emparchar.
