@@ -101,6 +101,8 @@ https://claude.ai/artifact/NvxiC3qC3ysyLCL98LiBZV
 - **Baserow:** se usa el mismo del bot viejo (`https://akar-baserow.concesionariaakar.shop`), credencial "Baserow Akar" en n8n. Base 2; tablas 11 (stock 0km), 16 (info general), 18 (ejemplos de anuncios), 4 (consultas sin respuesta).
 - **n8n (bot V1) hecho hasta "Variables":** chat de prueba → Ordenar datos → ¿Tiene archivo? → (Subir archivo) → Guardar mensaje en CRM → ¿Humano o no? → ¿Audio, Texto o Imagen? → [Texto] Esperar Último Input (30 s) → Obtener Inputs → ¿Es el último? → resp_marketing_ads → mensaje y respuesta → Aggregate → Variables. Faltan: ramas Imagen/pdf/Audio, AI Agent y lo que sigue.
 
+- **Modelo de la IA:** decisión de la usuaria: **Google Gemini** (gemini-2.5-flash, estable, temperatura 0) en lugar de OpenAI gpt-4.1. Si responde mal en las pruebas, se cambia el nodo por OpenAI o un Gemini "pro". Prompt adaptado: `bot/prompt_flujo_madre.md`.
+
 ## Próximos pasos (en orden)
 
 1. Flujo madre en n8n, respetando su estructura. Cambios:
