@@ -5,6 +5,7 @@
 --   1. contactos.es_prueba: marca los contactos del chat de prueba de n8n (se borran con bot_borrar_pruebas).
 --   2. Etiqueta "humano": al ponerla, el bot deja de responder. Al sacarla, vuelve a responder
 --      solo si el lead no tiene vendedor asignado.
+--      Etiqueta "urgente": la pone el bot cuando deriva a un cliente enojado o que pide un responsable.
 --   3. Funciones que llama n8n (solo con la clave service_role, nunca desde el navegador):
 --      · bot_registrar_entrante  → guarda cada mensaje del cliente (crea contacto y lead si no existen).
 --      · bot_registrar_saliente  → guarda cada mensaje que envía el bot.
@@ -14,13 +15,13 @@
 --      · bot_borrar_pruebas      → borra todo lo del chat de prueba.
 --
 -- Resultado esperado: "Success. No rows returned".
--- Verificación: Database → Functions → aparecen las funciones bot_*; Table Editor → etiquetas → "humano".
+-- Verificación: Database → Functions → aparecen las funciones bot_*; Table Editor → etiquetas → "humano" y "urgente".
 
 -- ---------- 1. Contactos de prueba ----------
 alter table public.contactos add column es_prueba boolean not null default false;
 
 -- ---------- 2. Etiqueta "humano" ----------
-insert into public.etiquetas (nombre, color) values ('humano', '#2f9aa3')
+insert into public.etiquetas (nombre, color) values ('humano', '#2f9aa3'), ('urgente', '#d64545')
 on conflict (nombre) do nothing;
 
 create or replace function public.al_cambiar_etiqueta_humano()
@@ -235,6 +236,12 @@ begin
 
   if v_motivo = 'problema' or v_sucursal is null or v_sector is null then
     update public.leads set estado = 'asignacion_manual', modo = 'humano' where id = p_lead_id;
+    -- Cliente enojado o que pide un responsable: etiqueta "urgente" para los administradores.
+    if v_motivo = 'problema' then
+      insert into public.lead_etiquetas (lead_id, etiqueta_id)
+      select p_lead_id, id from public.etiquetas where lower(nombre) = 'urgente'
+      on conflict do nothing;
+    end if;
     return jsonb_build_object('resultado', 'sin_asignar',
       'causa', case when v_motivo = 'problema' then 'problema' when v_sucursal is null then 'sin_sucursal' else 'sin_sector' end);
   end if;

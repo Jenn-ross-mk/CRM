@@ -67,6 +67,15 @@ insert into r values ('dz', bot_derivar((select (v->>'lead_id')::bigint from r w
 select pg_temp.ok(v->>'resultado' = 'sin_asignar' and v->>'causa' = 'sin_sucursal', 'otra provincia: sin asignar') from r where k = 'dz';
 select pg_temp.ok((select estado from leads where id = (select (v->>'lead_id')::bigint from r where k = 'z1')) = 'asignacion_manual', 'el lead figura en asignación manual');
 
+-- 8b. Cliente enojado: sin asignar y con etiqueta "urgente"; una derivación normal no la lleva.
+insert into r values ('q1', bot_registrar_entrante('whatsapp', '5492800000035', 'C9', null, 'texto', 'Quiero hablar con un responsable', null, 'wamid.35'));
+insert into r values ('dq', bot_derivar((select (v->>'lead_id')::bigint from r where k = 'q1'), 'convencional', 'problema', 'Reclamo por demora', 'Ana', 'Trelew'));
+select pg_temp.ok(v->>'resultado' = 'sin_asignar' and v->>'causa' = 'problema', 'cliente enojado: sin asignar') from r where k = 'dq';
+select pg_temp.ok(exists (select 1 from lead_etiquetas le join etiquetas e on e.id = le.etiqueta_id
+  where le.lead_id = (select (v->>'lead_id')::bigint from r where k = 'q1') and e.nombre = 'urgente'), 'cliente enojado: etiqueta "urgente"');
+select pg_temp.ok(not exists (select 1 from lead_etiquetas le join etiquetas e on e.id = le.etiqueta_id
+  where le.lead_id = (select (v->>'lead_id')::bigint from r where k = 'z1') and e.nombre = 'urgente'), 'otra provincia: sin etiqueta "urgente"');
+
 -- 9. No contactar.
 insert into r values ('n1', bot_registrar_entrante('whatsapp', '5492800000041', 'C6', null, 'texto', 'No me escriban', null, 'wamid.41'));
 insert into r values ('dn', bot_derivar((select (v->>'lead_id')::bigint from r where k = 'n1'), null, 'no_contactar', 'Pidió no ser contactado', null, null));

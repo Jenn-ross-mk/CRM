@@ -16,7 +16,7 @@ de Akar en n8n, conectado a este CRM. **Una sesión nueva debe leer esto antes d
 ## Los workflows originales
 
 Son 28 workflows exportados de n8n que la usuaria pegó en el chat (no están en el repositorio).
-Para seguir, **pedirle que los vuelva a pegar**, empezando por "01. Flujo madre".
+Siguen en el historial de la sesión original. En una sesión nueva, **pedirle que los vuelva a pegar**, empezando por "01. Flujo madre".
 Dos de ellos tenían claves escritas dentro: hay que borrarlas antes de pegarlos.
 - *BT_derivar_humano*: token de Meta en el nodo `register_number_meta`. Este workflow no se usa.
 - *Workflows_backups*: API key de n8n en el nodo `Return N8N Workflows`.
@@ -70,11 +70,11 @@ https://claude.ai/artifact/NvxiC3qC3ysyLCL98LiBZV
     - Armar la lista de zonas.
     - Decidir sobre las métricas (update_dashboard_center, Dasboard_update…), aviso_vendedor, registra_leads_recuperar, recuperar_reagsignar_leads y Notificador_errores (la casilla de mail).
 
-## Pendiente de confirmar con la usuaria
+## Confirmado por la usuaria
 
-1. **Al derivar, el bot deja de responder siempre**, también si queda en cola fuera de horario. Así está construido hoy.
-2. **¿Los 2 seguimientos son 2 en total por cliente**, o se reinician cada vez que responde? Hoy: 2 en total.
-3. **El motivo "problema"** (cliente enojado o que pide un responsable) va a "Sin asignar" para los administradores.
+1. **Al derivar, el bot deja de responder siempre.** Antes avisa que deriva y, si es fuera de horario, informa el horario de atención.
+2. **Los 2 seguimientos son 2 en total por cliente** (no se reinician).
+3. **Cliente enojado o que pide un responsable** (motivo "problema"): va a "Sin asignar" con la etiqueta **"urgente"** (roja), que pone el bot.
 
 ## Lo que ya está hecho
 
@@ -82,9 +82,9 @@ https://claude.ai/artifact/NvxiC3qC3ysyLCL98LiBZV
   - `bot_registrar_entrante`, `bot_registrar_saliente`, `bot_actualizar_ficha`, `bot_derivar`;
   - `bot_leads_para_seguimiento` y `bot_registrar_seguimiento`;
   - `bot_borrar_pruebas`;
-  - la etiqueta "humano" con su trigger, y `contactos.es_prueba`.
+  - las etiquetas "humano" (con su trigger) y "urgente", y `contactos.es_prueba`.
   - **Todavía no se ejecutó en Supabase.**
-- `supabase/tests/parte9_bot_test.sql`: 32 pruebas. Todas pasan en una copia local del CRM (Postgres 16 con las migraciones 1 a 9).
+- `supabase/tests/parte9_bot_test.sql`: 35 pruebas. Todas pasan en una copia local del CRM (Postgres 16 con las migraciones 1 a 9).
 
 ## Próximos pasos (en orden)
 
