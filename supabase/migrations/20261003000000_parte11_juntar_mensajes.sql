@@ -2,9 +2,9 @@
 -- Parte 11 — El bot junta los mensajes seguidos del cliente usando el CRM (reemplaza a Redis)
 -- =============================================================
 -- Qué hace:
---   1. mensajes.transcripcion: lo que el bot entendió de un archivo del cliente
+--   1. Tabla mensaje_transcripciones: lo que el bot entendió de un archivo del cliente
 --      (la descripción de una foto, la transcripción de un audio, el texto de un PDF).
---      El CRM lo muestra debajo del archivo, así el vendedor puede leer un audio sin escucharlo.
+--      Es solo para el bot: nadie la puede ver desde el CRM (no tiene permisos de lectura).
 --   2. bot_guardar_transcripcion: n8n guarda ahí esa descripción o transcripción.
 --   3. bot_mensajes_pendientes: después de esperar 30 segundos, n8n pregunta si llegó algún mensaje
 --      más nuevo del cliente. Si llegó, este se calla (va a contestar el más nuevo). Si no, devuelve
@@ -12,11 +12,19 @@
 --
 -- Resultado esperado: "Success. No rows returned".
 
-alter table public.mensajes add column transcripcion text;
+create table public.mensaje_transcripciones (
+  mensaje_id  bigint primary key references public.mensajes (id) on delete cascade,
+  texto       text not null,
+  creado_en   timestamptz not null default now()
+);
+-- Seguridad activada y sin reglas de acceso: solo el bot (funciones de abajo) la usa.
+alter table public.mensaje_transcripciones enable row level security;
 
 create or replace function public.bot_guardar_transcripcion(p_mensaje_id bigint, p_texto text)
 returns void language sql security definer set search_path = public as $$
-  update public.mensajes set transcripcion = nullif(trim(p_texto), '') where id = p_mensaje_id;
+  insert into public.mensaje_transcripciones (mensaje_id, texto)
+  select p_mensaje_id, trim(p_texto) where nullif(trim(p_texto), '') is not null
+  on conflict (mensaje_id) do update set texto = excluded.texto;
 $$;
 
 -- es_ultimo = false: llegó otro mensaje del cliente después de este (lo contesta el otro).
@@ -42,11 +50,12 @@ begin
              else '[' || case m.tipo when 'imagen' then 'El cliente envió una imagen'
                                      when 'audio' then 'Audio del cliente'
                                      else 'El cliente envió un documento' end
-                  || coalesce(': ' || m.transcripcion, '') || ']'
+                  || coalesce(': ' || t.texto, '') || ']'
                   || coalesce(' ' || nullif(trim(m.contenido), ''), '')
            end, E'\n' order by m.id)
   into v_texto
   from public.mensajes m
+  left join public.mensaje_transcripciones t on t.mensaje_id = m.id
   where m.lead_id = p_lead_id and m.direccion = 'entrante' and m.id > coalesce(v_ultima_respuesta, 0);
 
   return jsonb_build_object(
