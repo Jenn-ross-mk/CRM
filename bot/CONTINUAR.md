@@ -116,6 +116,8 @@ https://claude.ai/artifact/NvxiC3qC3ysyLCL98LiBZV
 4. Envío a Meta, incluidos los mensajes que escriben los vendedores en el CRM (hoy quedan "pendiente").
 5. Al final: credenciales, ejecutar la Parte 9 en Supabase, conectar el webhook de Meta y probar.
 
+Errores del 05 viejo que se corrigen al rearmarlo: le pasaba el **precio** a la IA (contradice "sin precios"); la marca salía como objeto; si el modelo no existía en Baserow el flujo se cortaba sin respuesta (falta "Always Output Data"); la descripción de `consulta` contradecía al prompt (pedía 'detalle' sin confirmar versión). Usados y "update_dashboard_center" se quitan.
+
 Errores del bot viejo que hay que evitar (detalle en la conversación original):
 - clientes de IG/Messenger mezclados por usar el teléfono como identificador;
 - deduplicación que no se usaba;
