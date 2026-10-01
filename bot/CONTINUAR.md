@@ -14,6 +14,10 @@ de Akar en n8n, conectado a este CRM. **Una sesión nueva debe leer esto antes d
 - Las credenciales (claves de Meta, OpenAI, n8n, Supabase) **se cargan al final**.
 - Las versiones de prueba viejas (BT_flujo_madre, BT_get_cars, BT_derivar_humano) **no se usan ni como referencia**.
 
+## Dónde se arma
+
+En una cuenta **nueva** de n8n Cloud (botakar.app.n8n.cloud), vacía. Se empieza desde cero: no se reutilizan webhooks, credenciales ni nada del n8n viejo (akar-n8n…), que queda como está.
+
 ## Los workflows originales
 
 Son 28 workflows exportados de n8n que la usuaria pegó en el chat (no están en el repositorio).
