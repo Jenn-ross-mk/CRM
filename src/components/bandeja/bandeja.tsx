@@ -274,7 +274,6 @@ function Burbuja({ m, autor }: { m: Mensaje; autor?: Usuario }) {
       <div className={`msg ${saliente ? 'msg-out' : 'msg-in'}${m.autor_tipo === 'bot' ? ' msg-bot' : ''}`}>
         {m.autor_tipo === 'vendedor' && autor && <div className="msg-author">{autor.nombre}</div>}
         {m.tipo !== 'texto' && <ArchivoMensaje m={m} />}
-        {m.transcripcion && <div className="msg-transcripcion">{m.transcripcion}</div>}
         {m.contenido}
         <div className="msg-time">{hora}{estado}</div>
       </div>

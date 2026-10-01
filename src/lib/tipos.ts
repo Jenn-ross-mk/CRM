@@ -116,8 +116,6 @@ export interface Mensaje {
   tipo: string;
   contenido: string | null;
   media_url: string | null;
-  /** Lo que el bot entendió del archivo: descripción de la foto, transcripción del audio, texto del PDF. */
-  transcripcion: string | null;
   estado_envio: string | null;
   creado_en: string;
 }

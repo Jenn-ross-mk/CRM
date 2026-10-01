@@ -432,7 +432,6 @@
   .msg-media{font-size:11px;font-weight:700;opacity:.8;margin-bottom:3px;}
   .msg-img{display:block;max-width:220px;max-height:260px;border-radius:8px;margin-bottom:4px;}
   .msg-audio{display:block;max-width:240px;margin-bottom:4px;}
-  .msg-transcripcion{font-size:12px;font-style:italic;opacity:.75;margin-bottom:3px;white-space:pre-wrap;}
   .avatar-mini{width:26px;height:26px;font-size:9.5px;}
   .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;}
   .avatar-bot{background:var(--navy-600);color:var(--white);}

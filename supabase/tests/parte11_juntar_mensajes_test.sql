@@ -11,7 +11,7 @@ insert into r values ('m3', bot_registrar_entrante('whatsapp', '5492800000099', 
 select bot_guardar_transcripcion((select (v->>'mensaje_id')::bigint from r where k = 'm2'), 'Un Chevrolet Onix rojo');
 select bot_guardar_transcripcion((select (v->>'mensaje_id')::bigint from r where k = 'm3'), '  quiero saber el precio  ');
 
-select pg_temp.ok((select transcripcion from mensajes where id = (select (v->>'mensaje_id')::bigint from r where k = 'm3')) = 'quiero saber el precio',
+select pg_temp.ok((select texto from mensaje_transcripciones where mensaje_id = (select (v->>'mensaje_id')::bigint from r where k = 'm3')) = 'quiero saber el precio',
   'la transcripción se guarda sin espacios de más');
 
 -- Los dos primeros se callan: hay un mensaje más nuevo.
@@ -38,5 +38,12 @@ insert into lead_etiquetas (lead_id, etiqueta_id)
 values ((select (v->>'lead_id')::bigint from r where k = 'm4'), (select id from etiquetas where nombre = 'humano'));
 select pg_temp.ok(bot_mensajes_pendientes((select (v->>'lead_id')::bigint from r where k = 'm4'),
   (select (v->>'mensaje_id')::bigint from r where k = 'm4'))->>'modo' = 'humano', 'si lo pasaron a humano durante la espera, lo avisa');
+
+-- Nadie con sesión del CRM puede leer las transcripciones.
+grant usage on schema public to authenticated;
+grant select on all tables in schema public to authenticated;
+set local role authenticated;
+select pg_temp.ok(not exists (select 1 from mensaje_transcripciones), 'el CRM no puede ver las transcripciones');
+reset role;
 
 rollback;
