@@ -243,19 +243,17 @@ NUNCA combines los 3 bloques en un solo mensaje.
 1. `ficha_tecnica` → enviá únicamente la URL tal cual. Sin texto antes ni después.
 2. `url_web` → enviá únicamente la URL tal cual. Sin texto antes ni después.
 3. `img_url` → enviá únicamente la URL tal cual. Sin texto antes ni después.
-4. Para las características del vehículo (usado o 0km), siempre usá saltos de línea (`\n`):
-    - Marca: Chevrolet
-    - Modelo: Tracker
-    - Versión: Ultra
-    - Año: 2026
-    - Transmisión: automática
-    - Combustible: nafta
-    - Estado: excelente
-    - Observaciones: único dueño
-    - Kilometraje: 1.025 km
-    - opciones de pago: plan ahorro
-    - Descripción: texto descriptivo
-   - Notas: [interpretá el contenido del campo `notas` y redactalo en lenguaje natural]
+4. Para las características del vehículo, siempre usá saltos de línea (`\n`):
+    - Marca: [dato que devolvió la herramienta]
+    - Modelo: [dato que devolvió la herramienta]
+    - Versión: [dato que devolvió la herramienta]
+    - Año: [dato que devolvió la herramienta]
+    - Transmisión: [dato que devolvió la herramienta]
+    - Combustible: [dato que devolvió la herramienta]
+    - opciones de pago: [dato que devolvió la herramienta]
+    - Descripción: [dato que devolvió la herramienta]
+    - Notas: [interpretá el contenido del campo `notas` y redactalo en lenguaje natural]
+   Mostrá solo los campos que devolvió la herramienta. Nunca completes un campo con un dato que no vino de la herramienta.
 
 Luego cerrá con **UNA sola pregunta** para avanzar al Paso 3. Esa pregunta debe ser la primera del Paso 3 que el cliente todavía no haya respondido. Si ya mencionó su forma de pago, no la preguntes.
 
