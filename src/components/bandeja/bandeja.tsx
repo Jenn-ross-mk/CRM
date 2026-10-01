@@ -7,6 +7,7 @@ import { enviarMensaje, marcarLeido, reabrirLead } from '@/app/acciones/leads';
 import { ETIQUETA_CANAL, ETIQUETA_ESTADO_LEAD, etiquetaMotivoCierre, etiquetaSector } from '@/lib/constantes';
 import type { DetalleLead } from '@/lib/datos';
 import { fechaCorta, horaBandeja, horaLocal } from '@/lib/fechas';
+import { crearClienteNavegador } from '@/lib/supabase/client';
 import type { EtapaPipeline, Etiqueta, LeadBandeja, Mensaje, Sucursal, Usuario } from '@/lib/tipos';
 import { Iconos } from '../iconos';
 import { FormCerrarLead } from '../cerrar-lead';
@@ -222,6 +223,45 @@ function Conversacion({ detalle, modo, yo, porId, sucursal, onVolver, onInfo, on
   );
 }
 
+/**
+ * Archivo de un mensaje. Los que sube el bot están en la carpeta privada "mensajes" de Supabase (media_url guarda la ruta):
+ * se abren con un enlace temporal, y Supabase solo lo da si el usuario puede ver ese mensaje.
+ */
+function ArchivoMensaje({ m }: { m: Mensaje }) {
+  const ruta = m.media_url;
+  const enCarpeta = !!ruta && !/^https?:\/\//.test(ruta);
+  const [enlace, setEnlace] = useState<string | null>(enCarpeta ? null : ruta);
+  useEffect(() => {
+    if (!enCarpeta || !ruta) return;
+    let vigente = true;
+    crearClienteNavegador()
+      .storage.from('mensajes')
+      .createSignedUrl(ruta, 3600)
+      .then(({ data }) => {
+        if (vigente) setEnlace(data?.signedUrl ?? null);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [ruta, enCarpeta]);
+
+  if (!enlace) return <div className="msg-media">[{m.tipo}]</div>;
+  if (m.tipo === 'imagen') {
+    return (
+      <a href={enlace} target="_blank" rel="noreferrer">
+        {/* eslint-disable-next-line @next/next/no-img-element -- enlace temporal de Supabase, no pasa por next/image */}
+        <img src={enlace} alt="Imagen enviada por el cliente" className="msg-img" />
+      </a>
+    );
+  }
+  if (m.tipo === 'audio') return <audio controls src={enlace} className="msg-audio" />;
+  return (
+    <div className="msg-media">
+      <a href={enlace} target="_blank" rel="noreferrer">[{m.tipo}]</a>
+    </div>
+  );
+}
+
 /** Un mensaje, con el avatar de quien lo escribió: foto/iniciales del vendedor o el ícono del bot. */
 function Burbuja({ m, autor }: { m: Mensaje; autor?: Usuario }) {
   const saliente = m.direccion === 'saliente';
@@ -233,9 +273,7 @@ function Burbuja({ m, autor }: { m: Mensaje; autor?: Usuario }) {
       {m.autor_tipo === 'vendedor' && <Avatar mini nombre={autor?.nombre ?? '?'} foto={autor?.foto_url} />}
       <div className={`msg ${saliente ? 'msg-out' : 'msg-in'}${m.autor_tipo === 'bot' ? ' msg-bot' : ''}`}>
         {m.autor_tipo === 'vendedor' && autor && <div className="msg-author">{autor.nombre}</div>}
-        {m.tipo !== 'texto' && (
-          <div className="msg-media">{m.media_url ? <a href={m.media_url} target="_blank" rel="noreferrer">[{m.tipo}]</a> : `[${m.tipo}]`}</div>
-        )}
+        {m.tipo !== 'texto' && <ArchivoMensaje m={m} />}
         {m.contenido}
         <div className="msg-time">{hora}{estado}</div>
       </div>
