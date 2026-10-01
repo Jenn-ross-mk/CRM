@@ -89,7 +89,7 @@ https://claude.ai/artifact/NvxiC3qC3ysyLCL98LiBZV
   - `bot_leads_para_seguimiento` y `bot_registrar_seguimiento`;
   - `bot_borrar_pruebas`;
   - las etiquetas "humano" (con su trigger) y "urgente", y `contactos.es_prueba`.
-  - **Todavía no se ejecutó en Supabase.**
+  - **Ya se ejecutó en el Supabase del CRM de prueba (1/10/2026, "Success").** No volver a ejecutarla.
 - `supabase/tests/parte9_bot_test.sql`: 35 pruebas. Todas pasan en una copia local del CRM (Postgres 16 con las migraciones 1 a 9).
 
 ## Próximos pasos (en orden)
