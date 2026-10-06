@@ -103,6 +103,9 @@ https://claude.ai/artifact/NvxiC3qC3ysyLCL98LiBZV
 
 - **Modelo de la IA:** decisión de la usuaria: **Google Gemini** (gemini-2.5-flash, estable, temperatura 0) en lugar de OpenAI gpt-4.1. Si responde mal en las pruebas, se cambia el nodo por OpenAI o un Gemini "pro". Prompt adaptado: `bot/prompt_flujo_madre.md`.
 
+- **Baserow nuevo (decisión de la usuaria):** espacio de trabajo "Bot Akar", base "Bot Akar", tabla **Vehiculos_0km** con columnas: modelo, puntos_fuertes, disponible, version, segmento, transmision, combustible, **financiamiento**, promocion, promo_desde, promo_hasta, foto, ficha_tecnica, link_web. 28 versiones cargadas (datos de la tabla vieja corregidos). Faltan: link_web, fotos, fichas; y las tablas Informacion_General, Ejemplos_Anuncios y Consultas_Sin_Respuesta. El bot viejo sigue con su Baserow sin cambios.
+- **Prompt:** tono de vendedora entusiasta con "Conversación de venta (corta)" (pedido de la usuaria).
+
 ## Próximos pasos (en orden)
 
 1. Flujo madre en n8n, respetando su estructura. Cambios:
