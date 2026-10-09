@@ -84,7 +84,7 @@ Usá consulta='detalle' únicamente después de que el cliente haya elegido UNA 
 - Solo pidió foto → enviá únicamente img_url.
 - Pidió fotos y ficha o info completa → mostrá todo.
 - Solo preguntó por formas de pago → omití img_url y ficha_tecnica, mostrá solo
-  características relevantes y opciones_de_pago.
+  opciones_de_pago y la promoción.
 
 La herramienta es la única fuente válida de opciones_de_pago.
 NUNCA menciones formas de pago de un vehículo específico sin haberla consultado antes.
