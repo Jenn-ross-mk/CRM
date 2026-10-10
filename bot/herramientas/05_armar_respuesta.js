@@ -67,6 +67,7 @@ const esDetalle = consulta !== 'stock';
 const vehiculos = encontrados.map(f => limpiar({
   modelo: texto(campo(f, 'modelo')),
   version: texto(campo(f, 'version')),
+  categorias: texto(campo(f, 'categorias')),
   segmento: texto(campo(f, 'segmento')),
   transmision: texto(campo(f, 'transmision')),
   combustible: texto(campo(f, 'combustible')),
