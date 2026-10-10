@@ -106,6 +106,14 @@ https://claude.ai/artifact/NvxiC3qC3ysyLCL98LiBZV
 - **Baserow nuevo (decisión de la usuaria):** espacio de trabajo "Bot Akar", base "Bot Akar", tabla **Vehiculos_0km** con columnas: modelo, puntos_fuertes, disponible, version, segmento, transmision, combustible, **financiamiento**, promocion, promo_desde, promo_hasta, foto, ficha_tecnica, link_web. 28 versiones cargadas (datos de la tabla vieja corregidos). IDs (base 3): Vehiculos_0km = tabla 19, Informacion_General = 20 (clave, contenido; claves EMPRESA, SERVICIOS, COBERTURA, UBICACION, HORARIO, PAGOS, CONTACTO, REDES_SOCIALES, PLAN_AHORRO, CONVENCIONAL, TOMA_DE_USADOS), Ejemplos_Anuncios = 21 (mensaje_anuncio, respuesta_agente; 7 ejemplos), Consultas_Sin_Respuesta = 22 (consulta, nombre, canal, lead_id, fecha). Pendiente de la usuaria: fotos y fichas técnicas en Vehiculos_0km. Las Heras: por ahora sin sucursal propia en el CRM (la atiende Comodoro). El bot viejo sigue con su Baserow sin cambios.
 - **Prompt:** tono de vendedora entusiasta con "Conversación de venta (corta)" (pedido de la usuaria).
 
+## Estado al 10/10/2026 (n8n, cuenta botakar)
+
+- **Flujo madre "bot V1" (publicado):** entrada completa con ramas Texto, Imagen (OpenAI Analyze Image), pdf (Extract From PDF, limpia caracteres de control) y Audio (OpenAI Transcribe, idioma es); las descripciones van a `bot_guardar_transcripcion`. AI Agent con **OpenAI** (Gemini daba 429), Postgres Chat Memory, Think (descripción suavizada) y Max Iterations 20.
+- **05. Buscar_vehiculos_baserow (publicado V2):** Gatillo (modelo, consulta) → obtener_nuevos (Baserow 3/19, Return All, Always Output Data) → armar_respuesta (código en `bot/herramientas/05_armar_respuesta.js`): solo filas disponibles, promo solo dentro de fechas, "Onix" trae Onix y Onix Plus, sin precios, columna nueva **categorias** (Long text). La columna en Baserow se llama "Financiamiento" (con mayúscula); el código la lee igual. segmento/transmision/combustible están vacías.
+- **Prompt:** tono neutro (no femenino), sin emojis ni exageraciones, arranque natural ("Te comento…"), primera respuesta = promoción del mes sin lista de versiones, mensaje corto al pedir info del auto, números técnicos solo si están en puntos_fuertes, asumir 0km.
+- **Falta en el flujo madre:** herramientas Derivar_humano (08), info_general (10), optimizacion_constante (02) y registrar_leads (04); la salida (cortar [NM], guardar la respuesta con `bot_registrar_saliente`, esperas entre mensajes, Evaluador de Omisión). Seguimientos: la usuaria los quiere dentro del flujo. Después Meta y credenciales.
+- **Pendiente de la usuaria en Baserow:** puntos_fuertes distintos por versión (y datos como autonomía), promociones con fechas, fotos y fichas, segmento/transmision/combustible, Spark baúl.
+
 ## Próximos pasos (en orden)
 
 1. Flujo madre en n8n, respetando su estructura. Cambios:
