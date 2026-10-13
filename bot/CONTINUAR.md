@@ -114,7 +114,7 @@ https://claude.ai/artifact/NvxiC3qC3ysyLCL98LiBZV
 - **Falta en el flujo madre:** herramientas Derivar_humano (08), info_general (10), optimizacion_constante (02) y registrar_leads (04); la salida (cortar [NM], guardar la respuesta con `bot_registrar_saliente`, esperas entre mensajes, Evaluador de Omisión). Seguimientos: la usuaria los quiere dentro del flujo. Después Meta y credenciales.
 - **Pendiente de la usuaria en Baserow:** puntos_fuertes distintos por versión (y datos como autonomía), promociones con fechas, fotos y fichas, segmento/transmision/combustible, Spark baúl.
 
-- **Decisión 13/10/2026 (avisos):** no se envían avisos a vendedores por WhatsApp (riesgo con Meta). Los avisos van solo como **notificaciones dentro del CRM**; el CRM todavía no tiene notificaciones: hay que armarlas. Las plantillas viejas de Meta (S1, S2, RG, RP1, RP2, IC1, IC2, alerta1, alerta2, lead_no_atendido) se borran y se crean nuevas; ojo: el bot viejo todavía las usa.
+- **Decisión 13/10/2026 (avisos):** no se envían avisos a vendedores por WhatsApp (riesgo con Meta). Los avisos van solo como **notificaciones dentro del CRM**; el CRM todavía no tiene notificaciones: hay que armarlas. El bot nuevo **no usa** las plantillas del bot viejo (S1, S2, RG, RP1, RP2, IC1, IC2, alerta1, alerta2, lead_no_atendido): se crean plantillas nuevas. En el bot viejo no se toca nada. Todas las instrucciones de la usuaria son siempre para el bot nuevo.
 
 ## Próximos pasos (en orden)
 
