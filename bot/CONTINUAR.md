@@ -93,9 +93,28 @@ https://claude.ai/artifact/NvxiC3qC3ysyLCL98LiBZV
 - `supabase/tests/parte9_bot_test.sql`: 35 pruebas. Todas pasan en una copia local del CRM (Postgres 16 con las migraciones 1 a 9).
 
 - `supabase/migrations/20261002000000_parte10_archivos.sql` (Parte 10): carpeta privada "mensajes" en Supabase Storage para las fotos, audios y PDF de los clientes. Cada usuario abre solo los archivos de los mensajes que puede ver. n8n sube con service_role y guarda la ruta en `mensajes.media_url`. Prueba: `supabase/tests/parte10_archivos_test.sql`. **Ya se ejecutó en el Supabase del CRM de prueba ("Success").**
-  - Mensajes del CRM ya muestra esos archivos (foto en miniatura, audio para escuchar, documento con enlace) con un enlace temporal. **Falta publicar esa versión del CRM.**
+  - Mensajes del CRM ya muestra esos archivos (foto en miniatura, audio para escuchar, documento con enlace) con un enlace temporal. Publicado.
 
-- `supabase/migrations/20261003000000_parte11_juntar_mensajes.sql` (Parte 11): **Redis no se usa**. Decisión de la usuaria: el bot junta los mensajes seguidos usando el CRM. Después de esperar 30 s, `bot_mensajes_pendientes(lead, mensaje)` dice si es el último mensaje del cliente y devuelve todos los mensajes sin contestar juntos (y el modo, por si lo derivaron durante la espera). `bot_guardar_transcripcion` guarda la descripción de fotos / transcripción de audios en la tabla `mensaje_transcripciones`, **solo para el bot** (decisión de la usuaria: los vendedores no la ven). Prueba: `supabase/tests/parte11_juntar_mensajes_test.sql`.
+- `supabase/migrations/20261003000000_parte11_juntar_mensajes.sql` (Parte 11): **Redis no se usa**. Decisión de la usuaria: el bot junta los mensajes seguidos usando el CRM. Después de esperar 30 s, `bot_mensajes_pendientes(lead, mensaje)` dice si es el último mensaje del cliente y devuelve todos los mensajes sin contestar juntos (y el modo, por si lo derivaron durante la espera). `bot_guardar_transcripcion` guarda la descripción de fotos / transcripción de audios en la tabla `mensaje_transcripciones`, **solo para el bot** (decisión de la usuaria: los vendedores no la ven). Prueba: `supabase/tests/parte11_juntar_mensajes_test.sql`. **Ya se ejecutó en Supabase ("Success").**
+
+- `supabase/migrations/20261004000000_parte12_memoria_bot.sql` (Parte 12): tabla `n8n_chat_histories` (memoria de la IA, clave `canal:canal_id`) creada de antemano con seguridad activada y sin acceso desde el CRM; `bot_borrar_pruebas` también borra la memoria de las pruebas. Prueba: `supabase/tests/parte12_memoria_bot_test.sql`. **Ya se ejecutó en Supabase ("Success").**
+- **Baserow:** se usa el mismo del bot viejo (`https://akar-baserow.concesionariaakar.shop`), credencial "Baserow Akar" en n8n. Base 2; tablas 11 (stock 0km), 16 (info general), 18 (ejemplos de anuncios), 4 (consultas sin respuesta).
+- **n8n (bot V1) hecho hasta "Variables":** chat de prueba → Ordenar datos → ¿Tiene archivo? → (Subir archivo) → Guardar mensaje en CRM → ¿Humano o no? → ¿Audio, Texto o Imagen? → [Texto] Esperar Último Input (30 s) → Obtener Inputs → ¿Es el último? → resp_marketing_ads → mensaje y respuesta → Aggregate → Variables. Faltan: ramas Imagen/pdf/Audio, AI Agent y lo que sigue.
+
+- **Modelo de la IA:** decisión de la usuaria: **Google Gemini** (gemini-2.5-flash, estable, temperatura 0) en lugar de OpenAI gpt-4.1. Si responde mal en las pruebas, se cambia el nodo por OpenAI o un Gemini "pro". Prompt adaptado: `bot/prompt_flujo_madre.md`.
+
+- **Baserow nuevo (decisión de la usuaria):** espacio de trabajo "Bot Akar", base "Bot Akar", tabla **Vehiculos_0km** con columnas: modelo, puntos_fuertes, disponible, version, segmento, transmision, combustible, **financiamiento**, promocion, promo_desde, promo_hasta, foto, ficha_tecnica, link_web. 28 versiones cargadas (datos de la tabla vieja corregidos). IDs (base 3): Vehiculos_0km = tabla 19, Informacion_General = 20 (clave, contenido; claves EMPRESA, SERVICIOS, COBERTURA, UBICACION, HORARIO, PAGOS, CONTACTO, REDES_SOCIALES, PLAN_AHORRO, CONVENCIONAL, TOMA_DE_USADOS), Ejemplos_Anuncios = 21 (mensaje_anuncio, respuesta_agente; 7 ejemplos), Consultas_Sin_Respuesta = 22 (consulta, nombre, canal, lead_id, fecha). Pendiente de la usuaria: fotos y fichas técnicas en Vehiculos_0km. Las Heras: por ahora sin sucursal propia en el CRM (la atiende Comodoro). El bot viejo sigue con su Baserow sin cambios.
+- **Prompt:** tono de vendedora entusiasta con "Conversación de venta (corta)" (pedido de la usuaria).
+
+## Estado al 10/10/2026 (n8n, cuenta botakar)
+
+- **Flujo madre "bot V1" (publicado):** entrada completa con ramas Texto, Imagen (OpenAI Analyze Image), pdf (Extract From PDF, limpia caracteres de control) y Audio (OpenAI Transcribe, idioma es); las descripciones van a `bot_guardar_transcripcion`. AI Agent con **OpenAI** (Gemini daba 429), Postgres Chat Memory, Think (descripción suavizada) y Max Iterations 20.
+- **05. Buscar_vehiculos_baserow (publicado V2):** Gatillo (modelo, consulta) → obtener_nuevos (Baserow 3/19, Return All, Always Output Data) → armar_respuesta (código en `bot/herramientas/05_armar_respuesta.js`): solo filas disponibles, promo solo dentro de fechas, "Onix" trae Onix y Onix Plus, sin precios, columna nueva **categorias** (Long text). La columna en Baserow se llama "Financiamiento" (con mayúscula); el código la lee igual. segmento/transmision/combustible están vacías.
+- **Prompt:** tono neutro (no femenino), sin emojis ni exageraciones, arranque natural ("Te comento…"), primera respuesta = promoción del mes sin lista de versiones, mensaje corto al pedir info del auto, números técnicos solo si están en puntos_fuertes, asumir 0km.
+- **Falta en el flujo madre:** herramientas Derivar_humano (08), info_general (10), optimizacion_constante (02) y registrar_leads (04); la salida (cortar [NM], guardar la respuesta con `bot_registrar_saliente`, esperas entre mensajes, Evaluador de Omisión). Seguimientos: la usuaria los quiere dentro del flujo. Después Meta y credenciales.
+- **Pendiente de la usuaria en Baserow:** puntos_fuertes distintos por versión (y datos como autonomía), promociones con fechas, fotos y fichas, segmento/transmision/combustible, Spark baúl.
+
+- **Decisión 13/10/2026 (avisos):** no se envían avisos a vendedores por WhatsApp (riesgo con Meta). Los avisos van solo como **notificaciones dentro del CRM**; el CRM todavía no tiene notificaciones: hay que armarlas. El bot nuevo **no usa** las plantillas del bot viejo (S1, S2, RG, RP1, RP2, IC1, IC2, alerta1, alerta2, lead_no_atendido): se crean plantillas nuevas. En el bot viejo no se toca nada. Todas las instrucciones de la usuaria son siempre para el bot nuevo.
 
 ## Próximos pasos (en orden)
 
@@ -109,6 +128,8 @@ https://claude.ai/artifact/NvxiC3qC3ysyLCL98LiBZV
 3. Workflow de los 2 seguimientos.
 4. Envío a Meta, incluidos los mensajes que escriben los vendedores en el CRM (hoy quedan "pendiente").
 5. Al final: credenciales, ejecutar la Parte 9 en Supabase, conectar el webhook de Meta y probar.
+
+Errores del 05 viejo que se corrigen al rearmarlo: le pasaba el **precio** a la IA (contradice "sin precios"); la marca salía como objeto; si el modelo no existía en Baserow el flujo se cortaba sin respuesta (falta "Always Output Data"); la descripción de `consulta` contradecía al prompt (pedía 'detalle' sin confirmar versión). Usados y "update_dashboard_center" se quitan.
 
 Errores del bot viejo que hay que evitar (detalle en la conversación original):
 - clientes de IG/Messenger mezclados por usar el teléfono como identificador;

@@ -125,7 +125,7 @@
   .pill-outline{border:1px solid var(--silver);color:var(--slate);}
   .conv-sub{font-size:12px;color:var(--slate);margin-top:3px;}
   .messages{flex:1;padding:20px 22px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
-  .msg{max-width:62%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;}
+  .msg{max-width:62%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;white-space:pre-line;overflow-wrap:anywhere;}
   .msg-in{align-self:flex-start;background:var(--white);border:1px solid var(--silver);color:var(--ink);border-bottom-left-radius:3px;}
   .msg-out{align-self:flex-end;background:var(--navy-800);color:var(--white);border-bottom-right-radius:3px;}
   .msg-time{font-size:10px;color:var(--slate);margin-top:5px;}
