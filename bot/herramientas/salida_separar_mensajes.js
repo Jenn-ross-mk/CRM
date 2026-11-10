@@ -8,6 +8,13 @@ let partes = texto
   .map(p => p.replace(/\\n/g, '\n').trim())
   .filter(Boolean);
 
+// Si la IA escribió la lista en un solo renglón ("…: - Montana: … - S10: …"), cada opción va en su renglón
+partes = partes.map(p => {
+  const i = p.search(/:\s+-\s+\S/);
+  if (i === -1) return p;
+  return p.slice(0, i + 1) + p.slice(i + 1).replace(/\s+-\s+(?=\S)/g, '\n- ');
+});
+
 // El saludo siempre va solo, aunque la IA lo haya pegado al resto
 const saludo = /^(¡?hola!?[^\n]*?gracias por (?:escribirnos|ponerte en contacto con nosotros)[.!]?)\s+([\s\S]+)$/i;
 partes = partes.flatMap(p => {
