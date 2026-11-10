@@ -129,10 +129,10 @@ export function Bandeja(props: PropsBandeja) {
 
       {seleccionado && lead ? (
         <>
-          <Conversacion key={lead.id} detalle={seleccionado} modo={modo} yo={props.yo} porId={porId} sucursal={lead.sucursal_id ? sucursalNombre.get(lead.sucursal_id) ?? '—' : '—'}
+          <Conversacion key={`conv-${lead.id}`} detalle={seleccionado} modo={modo} yo={props.yo} porId={porId} sucursal={lead.sucursal_id ? sucursalNombre.get(lead.sucursal_id) ?? '—' : '—'}
             onVolver={() => setVista('lista')} onInfo={() => setVista('info')}
             onCerrado={() => { setVista('lista'); navegar({ lead: null }); }} />
-          <PanelDetalle key={lead.id} {...props} detalle={seleccionado} porId={porId} sucursalNombre={sucursalNombre} onVolver={() => setVista('chat')} />
+          <PanelDetalle key={`panel-${lead.id}`} {...props} detalle={seleccionado} porId={porId} sucursalNombre={sucursalNombre} onVolver={() => setVista('chat')} />
         </>
       ) : (
         <div className="conversation">
