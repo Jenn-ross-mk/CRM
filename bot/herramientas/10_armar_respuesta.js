@@ -2,8 +2,14 @@
 const normalizar = (t) => String(t ?? '')
   .normalize('NFD').replace(/[̀-ͯ]/g, '')
   .toUpperCase().trim().replace(/\s+/g, '_');
-const pedidas = String($('Gatillo').first().json.clave || '')
+let pedidas = String($('Gatillo').first().json.clave || '')
   .split(',').map(normalizar).filter(Boolean);
+
+// Dirección y horario van siempre juntos: si pide uno, se mandan los dos
+const esUbicacionOHorario = (p) => /^(UBICACION|DIRECCION|SUCURSAL|HORARIO)/.test(p);
+if (pedidas.some(esUbicacionOHorario)) {
+  pedidas = [...new Set([...pedidas, 'UBICACION', 'HORARIO'])];
+}
 
 // Lee una columna sin importar mayúsculas y convierte selecciones en texto
 const campo = (fila, nombre) => {
