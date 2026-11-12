@@ -25,8 +25,9 @@ const filas = $input.all().map(i => i.json)
   .map(f => ({ clave: normalizar(campo(f, 'clave')), contenido: campo(f, 'contenido') }))
   .filter(f => f.clave && f.contenido);
 
-// Busca la clave pedida (acepta "HORARIOS" por "HORARIO")
-const coincide = (clave, pedida) => clave === pedida || clave === pedida.replace(/S$/, '') || clave + 'S' === pedida;
+// Busca la clave pedida (acepta "HORARIO" o "HORARIOS", con o sin texto después)
+const base = (t) => t.replace(/S$/, '');
+const coincide = (clave, pedida) => clave.startsWith(base(pedida));
 const encontradas = filas.filter(f => pedidas.some(p => coincide(f.clave, p)));
 
 // Si no pidió clave o no existe, devuelve toda la información
