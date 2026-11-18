@@ -139,3 +139,9 @@ Errores del bot viejo que hay que evitar (detalle en la conversación original):
 - la marca guardada como una sola letra (`Marca[0]`);
 - motivo de derivación inválido que dejaba al lead sin derivar;
 - prompt con instrucciones contradictorias.
+
+## Actualización: info_general (10) funcionando
+- 10_armar_respuesta.js versión V3 publicada: UBICACION y HORARIO se devuelven siempre juntos; la clave coincide con o sin S final (la fila de Baserow se llama HORARIOS).
+- Regla 17 del prompt ("Consultá en el momento") pegada en bot V1.
+- Prueba OK: "¿qué horario tiene la sucursal de Esquel?" → dirección + horario, sin "ahora consulto".
+- Pendiente: que la usuaria confirme que el horario coincide con Baserow y revisar la fila TOMA_DE_USADOS.

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from 'react';
 import { enviarMensaje, marcarLeido, reabrirLead } from '@/app/acciones/leads';
 import { ETIQUETA_CANAL, ETIQUETA_ESTADO_LEAD, etiquetaMotivoCierre, etiquetaSector } from '@/lib/constantes';
 import type { DetalleLead } from '@/lib/datos';
@@ -14,11 +14,12 @@ import { FormCerrarLead } from '../cerrar-lead';
 import { Avatar, Toast, useAccion } from '../ui';
 import { FormNuevoLead } from './form-nuevo-lead';
 import { PanelDetalle } from './panel-detalle';
+import { esSinAsignar, pasaFiltro, type FiltroBandeja } from './filtros-bandeja';
 
 export interface PropsBandeja {
   modo: 'vendedor' | 'gestion';
   leads: LeadBandeja[];
-  filtroLeido: 'no' | 'si';
+  filtro: FiltroBandeja;
   seleccionado: DetalleLead | null;
   usuarios: Usuario[];
   sucursales: Sucursal[];
@@ -35,8 +36,16 @@ const snippet = (l: LeadBandeja) => {
   return texto ? `${autor}${texto}` : 'Sin mensajes';
 };
 
+const suscribirStorage = (aviso: () => void) => {
+  window.addEventListener('storage', aviso);
+  return () => window.removeEventListener('storage', aviso);
+};
+const leerDetalleOculto = () => {
+  try { return localStorage.getItem('bandeja-detalle-oculto') === '1'; } catch { return false; }
+};
+
 export function Bandeja(props: PropsBandeja) {
-  const { modo, leads, filtroLeido, seleccionado, usuarios, sucursales } = props;
+  const { modo, leads, filtro, seleccionado, usuarios, sucursales, yo } = props;
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -49,12 +58,33 @@ export function Bandeja(props: PropsBandeja) {
   const porId = useMemo(() => new Map(usuarios.map((u) => [u.id, u])), [usuarios]);
   const sucursalNombre = useMemo(() => new Map(sucursales.map((s) => [s.id, s.nombre])), [sucursales]);
   const noLeidos = leads.filter((l) => !l.leido).length;
-  const lista = leads.filter((l) => (filtroLeido === 'no' ? !l.leido : l.leido));
-  // La conversación abierta sigue visible en la lista aunque se haya marcado como leída.
+  const lista = leads.filter((l) => pasaFiltro(l, filtro, yo.id));
+  // La conversación abierta sigue visible en "No leídos" aunque se haya marcado como leída.
   if (seleccionado && !lista.some((l) => l.id === seleccionado.lead.id)) {
     const actual = leads.find((l) => l.id === seleccionado.lead.id);
-    if (actual && filtroLeido === 'no') lista.unshift(actual);
+    if (actual && filtro === 'no') lista.unshift(actual);
   }
+  const pestanas: { valor: FiltroBandeja; titulo: string; cantidad: number }[] = modo === 'gestion'
+    ? [
+        { valor: 'no', titulo: 'No leídos', cantidad: noLeidos },
+        { valor: 'mias', titulo: 'Mías', cantidad: leads.filter((l) => l.vendedor_id === yo.id).length },
+        { valor: 'sin', titulo: 'Sin asignar', cantidad: leads.filter(esSinAsignar).length },
+        { valor: 'todas', titulo: 'Todas', cantidad: leads.length },
+      ]
+    : [
+        { valor: 'no', titulo: 'No leídos', cantidad: noLeidos },
+        { valor: 'si', titulo: 'Leídos', cantidad: leads.length - noLeidos },
+      ];
+
+  // Los datos del lead se pueden contraer para darle más lugar a la conversación (se recuerda en este navegador).
+  // En el servidor se muestra abierto; en el navegador se toma lo último que eligió.
+  const guardado = useSyncExternalStore(suscribirStorage, leerDetalleOculto, () => false);
+  const [elegido, setElegido] = useState<boolean | null>(null);
+  const detalleOculto = elegido ?? guardado;
+  const cambiarDetalle = (oculto: boolean) => {
+    setElegido(oculto);
+    try { localStorage.setItem('bandeja-detalle-oculto', oculto ? '1' : '0'); } catch { /* sin almacenamiento */ }
+  };
 
   const navegar = (cambios: Record<string, string | null>) => {
     const p = new URLSearchParams(params);
@@ -82,16 +112,15 @@ export function Bandeja(props: PropsBandeja) {
   const marcado = cargando && abriendo ? abriendo : lead?.id;
 
   return (
-    <div className="body-row" data-vista={vista} style={modo === 'gestion' ? { height: '100%' } : undefined}>
+    <div className={`body-row${detalleOculto ? ' detalle-oculto' : ''}`} data-vista={vista} style={modo === 'gestion' ? { height: '100%' } : undefined}>
       {cargando && <div className="loading-bar" />}
       <div className="inbox">
-        <div className="inbox-tabs">
-          <div className={`inbox-tab${filtroLeido === 'no' ? ' active' : ''}`} onClick={() => navegar({ f: null, lead: null })}>
-            No leídos <span>· {noLeidos}</span>
-          </div>
-          <div className={`inbox-tab${filtroLeido === 'si' ? ' active' : ''}`} onClick={() => navegar({ f: 'si', lead: null })}>
-            Leídos <span>· {leads.length - noLeidos}</span>
-          </div>
+        <div className={`inbox-tabs${pestanas.length > 2 ? ' inbox-tabs-4' : ''}`}>
+          {pestanas.map((p) => (
+            <div key={p.valor} className={`inbox-tab${filtro === p.valor ? ' active' : ''}`} onClick={() => navegar({ f: p.valor === 'no' ? null : p.valor, lead: null })}>
+              {p.titulo} <span>{pestanas.length > 2 ? p.cantidad : `· ${p.cantidad}`}</span>
+            </div>
+          ))}
         </div>
         <div className="inbox-actions">
           <span className="pipe-filters-note">{lista.length} conversaciones</span>
@@ -132,7 +161,10 @@ export function Bandeja(props: PropsBandeja) {
           <Conversacion key={`conv-${lead.id}`} detalle={seleccionado} modo={modo} yo={props.yo} porId={porId} sucursal={lead.sucursal_id ? sucursalNombre.get(lead.sucursal_id) ?? '—' : '—'}
             onVolver={() => setVista('lista')} onInfo={() => setVista('info')}
             onCerrado={() => { setVista('lista'); navegar({ lead: null }); }} />
-          <PanelDetalle key={`panel-${lead.id}`} {...props} detalle={seleccionado} porId={porId} sucursalNombre={sucursalNombre} onVolver={() => setVista('chat')} />
+          <PanelDetalle key={`panel-${lead.id}`} {...props} detalle={seleccionado} porId={porId} sucursalNombre={sucursalNombre} onVolver={() => setVista('chat')} onContraer={() => cambiarDetalle(true)} />
+          <button className="detail-tira" onClick={() => cambiarDetalle(false)} title="Mostrar los datos del lead" aria-label="Mostrar los datos del lead">
+            <span aria-hidden>‹</span><span className="detail-tira-texto">Datos del lead</span>
+          </button>
         </>
       ) : (
         <div className="conversation">
@@ -145,7 +177,7 @@ export function Bandeja(props: PropsBandeja) {
       )}
 
       <FormNuevoLead abierto={nuevoAbierto} onCerrar={() => setNuevoAbierto(false)} {...props}
-        onCreado={(id) => { setNuevoAbierto(false); setVista('chat'); navegar({ lead: id, f: 'si' }); }} />
+        onCreado={(id) => { setNuevoAbierto(false); setVista('chat'); navegar({ lead: id, f: modo === 'gestion' ? 'todas' : 'si' }); }} />
     </div>
   );
 }

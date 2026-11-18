@@ -98,6 +98,9 @@
   .inbox-tab{font-size:12.5px;font-weight:600;color:var(--slate);padding-bottom:11px;cursor:pointer;border-bottom:2px solid transparent;}
   .inbox-tab.active{color:var(--navy-800);border-bottom-color:var(--navy-800);}
   .inbox-list{overflow-y:auto;flex:1;}
+  .inbox-tabs-4{padding:12px 10px 0;gap:0;}
+  .inbox-tabs-4 .inbox-tab{flex:1;text-align:center;font-size:11px;white-space:nowrap;padding:0 2px 11px;}
+  .inbox-tabs-4 .inbox-tab span{display:block;font-size:10.5px;}
   .chat-item{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--silver-light);cursor:pointer;}
   .chat-item.selected{background:var(--navy-50);}
   .chat-item .avatar{width:34px;height:34px;font-size:11px;}
@@ -139,6 +142,14 @@
   .detail-tabs{display:flex;border-bottom:1px solid var(--silver);padding:0 14px;}
   .detail-tab{flex:1;text-align:center;font-size:11px;font-weight:700;color:var(--slate);padding:13px 4px 11px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;}
   .detail-tab.active{color:var(--navy-800);border-bottom-color:var(--navy-800);}
+  .detail-tabs{align-items:center;}
+  .detail-contraer{flex:0 0 auto;background:none;border:1px solid var(--silver);border-radius:6px;color:var(--slate);font-size:15px;line-height:1;width:24px;height:24px;cursor:pointer;margin-left:4px;font-family:inherit;}
+  .detail-contraer:hover{color:var(--navy-800);border-color:var(--navy-800);}
+  .detail-tira{display:none;}
+  .body-row.detalle-oculto .detail{display:none;}
+  .body-row.detalle-oculto .detail-tira{display:flex;flex-direction:column;align-items:center;gap:10px;width:34px;flex-shrink:0;border:none;border-left:1px solid var(--silver);background:var(--white);color:var(--navy-800);font-family:inherit;font-weight:700;cursor:pointer;padding:14px 0;}
+  .body-row.detalle-oculto .detail-tira:hover{background:var(--silver-light);}
+  .detail-tira-texto{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;}
   .detail-tab-badge{background:var(--navy-100);color:var(--navy-800);font-size:9px;font-weight:800;border-radius:10px;padding:1px 5px;margin-left:2px;}
   .detail-pane{display:none;}
   .detail-pane.active{display:block;}
@@ -595,6 +606,7 @@
     .detail{display:none;}
     .body-row[data-vista="info"] .conversation{display:none;}
     .body-row[data-vista="info"] .detail{display:block;flex:1;width:auto;border-left:none;}
+    .detail-contraer,.body-row.detalle-oculto .detail-tira{display:none;}
   }
 
   /* ---------- Celular (hasta 760px) ---------- */
