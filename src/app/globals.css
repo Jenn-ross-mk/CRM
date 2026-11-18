@@ -98,9 +98,9 @@
   .inbox-tab{font-size:12.5px;font-weight:600;color:var(--slate);padding-bottom:11px;cursor:pointer;border-bottom:2px solid transparent;}
   .inbox-tab.active{color:var(--navy-800);border-bottom-color:var(--navy-800);}
   .inbox-list{overflow-y:auto;flex:1;}
-  .inbox-tabs-4{padding:12px 10px 0;gap:0;}
-  .inbox-tabs-4 .inbox-tab{flex:1;text-align:center;font-size:11px;white-space:nowrap;padding:0 2px 11px;}
-  .inbox-tabs-4 .inbox-tab span{display:block;font-size:10.5px;}
+  /* Pestañas de Mensajes (gestión): mismo tamaño que las de los datos del lead */
+  .inbox-tabs-gestion{padding:0 14px;gap:0;}
+  .inbox-tabs-gestion .inbox-tab{flex:1;text-align:center;font-size:11px;font-weight:700;white-space:nowrap;padding:13px 4px 11px;}
   .chat-item{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--silver-light);cursor:pointer;}
   .chat-item.selected{background:var(--navy-50);}
   .chat-item .avatar{width:34px;height:34px;font-size:11px;}

@@ -13,9 +13,8 @@ export default async function MensajesPage({ searchParams }: { searchParams: Pro
   return (
     <div className="dash" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="pipe-filters">
-        <FiltroSelect param="v" valor={params.v ?? ''} limpiar={['lead']} opciones={[
-          { valor: '', etiqueta: 'Todos los vendedores' },
-          { valor: '__sin__', etiqueta: '— Sin asignar (bot o asignación manual) —' },
+        <FiltroSelect param="v" valor={params.v ?? ''} limpiar={['lead', 'f']} opciones={[
+          { valor: '', etiqueta: 'Todos los vendedores (por pestañas)' },
           { valor: String(usuario.id), etiqueta: `${usuario.nombre} (yo)` },
           ...vendedores.map((v) => ({ valor: String(v.id), etiqueta: `${v.nombre}${v.activo ? '' : ' (baja)'}` })),
         ]} />
