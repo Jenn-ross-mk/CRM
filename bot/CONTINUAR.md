@@ -145,3 +145,8 @@ Errores del bot viejo que hay que evitar (detalle en la conversación original):
 - Regla 17 del prompt ("Consultá en el momento") pegada en bot V1.
 - Prueba OK: "¿qué horario tiene la sucursal de Esquel?" → dirección + horario, sin "ahora consulto".
 - Pendiente: que la usuaria confirme que el horario coincide con Baserow y revisar la fila TOMA_DE_USADOS.
+
+## Actualización: registrar_leads (04) y Mensajes
+- Workflow 04. registrar_leads: Gatillo (lead_id, datos) → preparar_datos (04_preparar_datos.js) → actualizar_ficha (Postgres `bot_actualizar_ficha($1::bigint, $2::jsonb)`, On Error Continue) → armar_respuesta (04_armar_respuesta.js). Publicado V1, conectado al AI Agent como herramienta registrar_leads. Prompt con regla 18. Prueba OK: la ficha del CRM se completó.
+- CRM (PR #6 y #7): Mensajes con pestañas Mías / Sin asignar / No leídos; datos del lead contraíbles.
+- Siguiente: optimizacion_constante (02, Baserow tabla 22).
