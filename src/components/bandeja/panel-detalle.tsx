@@ -13,7 +13,7 @@ import { Iconos } from '../iconos';
 import { Toast, useAccion, Vacio } from '../ui';
 import type { PropsBandeja } from './bandeja';
 
-type Props = PropsBandeja & { detalle: DetalleLead; porId: Map<number, Usuario>; sucursalNombre: Map<number, string>; onVolver?: () => void };
+type Props = PropsBandeja & { detalle: DetalleLead; porId: Map<number, Usuario>; sucursalNombre: Map<number, string>; onVolver?: () => void; onContraer?: () => void };
 
 export function PanelDetalle(props: Props) {
   const [tab, setTab] = useState<'info' | 'actividad' | 'recordatorios'>('info');
@@ -27,6 +27,9 @@ export function PanelDetalle(props: Props) {
         <div className={`detail-tab${tab === 'recordatorios' ? ' active' : ''}`} onClick={() => setTab('recordatorios')}>
           Recordatorios <span className="detail-tab-badge">{detalle.alertas.filter((a) => !a.turno_id).length + detalle.turnos.length}</span>
         </div>
+        {props.onContraer && (
+          <button className="detail-contraer" onClick={props.onContraer} title="Contraer los datos del lead" aria-label="Contraer los datos del lead">›</button>
+        )}
       </div>
       {tab === 'info' && <TabInfo {...props} />}
       {tab === 'actividad' && <TabActividad {...props} />}
