@@ -59,22 +59,23 @@ export function Bandeja(props: PropsBandeja) {
   const sucursalNombre = useMemo(() => new Map(sucursales.map((s) => [s.id, s.nombre])), [sucursales]);
   const noLeidos = leads.filter((l) => !l.leido).length;
   const lista = leads.filter((l) => pasaFiltro(l, filtro, yo.id));
-  // La conversación abierta sigue visible en "No leídos" aunque se haya marcado como leída.
+  // La conversación abierta sigue visible en la lista (por ejemplo, en "No leídos" después de leerla).
   if (seleccionado && !lista.some((l) => l.id === seleccionado.lead.id)) {
     const actual = leads.find((l) => l.id === seleccionado.lead.id);
-    if (actual && filtro === 'no') lista.unshift(actual);
+    if (actual) lista.unshift(actual);
   }
   const pestanas: { valor: FiltroBandeja; titulo: string; cantidad: number }[] = modo === 'gestion'
     ? [
-        { valor: 'no', titulo: 'No leídos', cantidad: noLeidos },
         { valor: 'mias', titulo: 'Mías', cantidad: leads.filter((l) => l.vendedor_id === yo.id).length },
         { valor: 'sin', titulo: 'Sin asignar', cantidad: leads.filter(esSinAsignar).length },
-        { valor: 'todas', titulo: 'Todas', cantidad: leads.length },
+        { valor: 'no', titulo: 'No leídos', cantidad: noLeidos },
       ]
     : [
         { valor: 'no', titulo: 'No leídos', cantidad: noLeidos },
         { valor: 'si', titulo: 'Leídos', cantidad: leads.length - noLeidos },
       ];
+  // La primera pestaña es la que se abre sin parámetro en la URL.
+  const pestanaInicial = pestanas[0].valor;
 
   // Los datos del lead se pueden contraer para darle más lugar a la conversación (se recuerda en este navegador).
   // En el servidor se muestra abierto; en el navegador se toma lo último que eligió.
@@ -115,13 +116,19 @@ export function Bandeja(props: PropsBandeja) {
     <div className={`body-row${detalleOculto ? ' detalle-oculto' : ''}`} data-vista={vista} style={modo === 'gestion' ? { height: '100%' } : undefined}>
       {cargando && <div className="loading-bar" />}
       <div className="inbox">
-        <div className={`inbox-tabs${pestanas.length > 2 ? ' inbox-tabs-4' : ''}`}>
-          {pestanas.map((p) => (
-            <div key={p.valor} className={`inbox-tab${filtro === p.valor ? ' active' : ''}`} onClick={() => navegar({ f: p.valor === 'no' ? null : p.valor, lead: null })}>
-              {p.titulo} <span>{pestanas.length > 2 ? p.cantidad : `· ${p.cantidad}`}</span>
-            </div>
-          ))}
-        </div>
+        {filtro === 'todas' ? (
+          <div className="inbox-tabs inbox-tabs-gestion">
+            <div className="inbox-tab active">Todas sus conversaciones <span className="detail-tab-badge">{leads.length}</span></div>
+          </div>
+        ) : (
+          <div className={`inbox-tabs${modo === 'gestion' ? ' inbox-tabs-gestion' : ''}`}>
+            {pestanas.map((p) => (
+              <div key={p.valor} className={`inbox-tab${filtro === p.valor ? ' active' : ''}`} onClick={() => navegar({ f: p.valor === pestanaInicial ? null : p.valor, lead: null })}>
+                {modo === 'gestion' ? <>{p.titulo} <span className="detail-tab-badge">{p.cantidad}</span></> : <>{p.titulo} <span>· {p.cantidad}</span></>}
+              </div>
+            ))}
+          </div>
+        )}
         <div className="inbox-actions">
           <span className="pipe-filters-note">{lista.length} conversaciones</span>
           <button className="btn-link" onClick={() => setNuevoAbierto(true)}>+ Nuevo lead</button>
@@ -177,7 +184,7 @@ export function Bandeja(props: PropsBandeja) {
       )}
 
       <FormNuevoLead abierto={nuevoAbierto} onCerrar={() => setNuevoAbierto(false)} {...props}
-        onCreado={(id) => { setNuevoAbierto(false); setVista('chat'); navegar({ lead: id, f: modo === 'gestion' ? 'todas' : 'si' }); }} />
+        onCreado={(id) => { setNuevoAbierto(false); setVista('chat'); navegar({ lead: id, f: modo === 'gestion' ? null : 'si' }); }} />
     </div>
   );
 }

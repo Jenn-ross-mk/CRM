@@ -1,11 +1,15 @@
 import type { LeadBandeja } from '@/lib/tipos';
 
-/** Pestañas de la lista de conversaciones. El vendedor ve No leídos / Leídos; gestión, No leídos / Mías / Sin asignar / Todas. */
+/**
+ * Pestañas de la lista de conversaciones. El vendedor ve No leídos / Leídos; gestión, Mías / Sin asignar / No leídos.
+ * En gestión, si se elige un vendedor en el desplegable, se ven todas sus conversaciones ("todas", sin pestañas).
+ */
 export type FiltroBandeja = 'no' | 'si' | 'mias' | 'sin' | 'todas';
 
-export const filtroDesdeUrl = (modo: 'vendedor' | 'gestion', f?: string): FiltroBandeja => {
+export const filtroDesdeUrl = (modo: 'vendedor' | 'gestion', f?: string, v?: string): FiltroBandeja => {
   if (modo === 'vendedor') return f === 'si' ? 'si' : 'no';
-  return f === 'mias' || f === 'sin' || f === 'todas' ? f : 'no';
+  if (v) return 'todas';
+  return f === 'sin' || f === 'no' ? f : 'mias';
 };
 
 /** Sin asignar: ya no la atiende el bot y todavía no tiene vendedor (en espera o para asignar a mano). */

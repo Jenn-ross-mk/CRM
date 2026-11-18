@@ -9,13 +9,12 @@ export type ParamsBandeja = { f?: string; lead?: string; q?: string; v?: string 
 /** Carga todo lo que necesita la bandeja según el rol y los parámetros de la URL. */
 export async function cargarBandeja(modo: 'vendedor' | 'gestion', sesion: Sesion, params: ParamsBandeja): Promise<PropsBandeja> {
   const yo = sesion.usuario;
-  const filtro = filtroDesdeUrl(modo, params.f);
+  const filtro = filtroDesdeUrl(modo, params.f, params.v);
   // Si la URL ya dice qué lead abrir, su detalle se busca en paralelo con la lista.
   const leadPedido = Number(params.lead) || null;
   const [leads, usuarios, sucursales, modelos, etapas, etiquetas, detallePedido] = await Promise.all([
     listarBandeja({
-      vendedorId: modo === 'vendedor' ? yo.id : params.v && params.v !== '__sin__' ? Number(params.v) || null : null,
-      sinAsignar: modo === 'gestion' && params.v === '__sin__',
+      vendedorId: modo === 'vendedor' ? yo.id : Number(params.v) || null,
       q: params.q,
     }),
     listarUsuarios(),
